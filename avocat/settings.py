@@ -91,7 +91,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'cabinetavocat',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': 'Bismillah@99',
         'HOST': 'localhost',
         'PORT': '3306',
         'OPTIONS': {

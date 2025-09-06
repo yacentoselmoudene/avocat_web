@@ -4,7 +4,24 @@ from django.contrib.auth.models import User
 import re
 from django.core.exceptions import ValidationError
 
+class Avocat(models.Model):
+    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
+    nomavocat = models.CharField(db_column='nomAvocat', max_length=255, db_collation='latin1_swedish_ci')
+    specialisation = models.CharField(max_length=255, db_collation='latin1_swedish_ci', blank=True, null=True)
 
+    class Meta:
+        managed = True
+        db_table = 'avocat'
+
+class Huissier(models.Model):
+    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
+    nomhuissier = models.CharField(db_column='nomHuissier', max_length=255, db_collation='latin1_swedish_ci')
+    adressehuissier = models.TextField(db_column='adresseHuissier', db_collation='latin1_swedish_ci', blank=True, null=True)
+    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
+
+    class Meta:
+        managed = True
+        db_table = 'huissier'
 
 # classification des affaires judiciaires selon le code
 #categorie 1
@@ -136,7 +153,7 @@ class Affairetribunal(models.Model):
     datejugement = models.DateField(db_column='dateJugement', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'affairetribunal'
         unique_together = (('idaffaire', 'idtribunal'),)
 
@@ -184,22 +201,6 @@ class Audience(models.Model):
     class Meta:
         managed = True
         db_table = 'audience'
-
-
-
-
-
-
-class Avocat(models.Model):
-    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomavocat = models.CharField(db_column='nomAvocat', max_length=255, db_collation='latin1_swedish_ci')
-    specialisation = models.CharField(max_length=255, db_collation='latin1_swedish_ci', blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'avocat'
-
-
 
 
 class Client(models.Model):
@@ -316,7 +317,7 @@ class Expert(models.Model):
     telephoneexpert = models.CharField(db_column='telephoneExpert', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'expert'
 
 
@@ -327,19 +328,11 @@ class Facture(models.Model):
     idclient = models.ForeignKey(Client, models.DO_NOTHING, db_column='idClient', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'facture'
 
 
-class Huissier(models.Model):
-    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomhuissier = models.CharField(db_column='nomHuissier', max_length=255, db_collation='latin1_swedish_ci')
-    adressehuissier = models.TextField(db_column='adresseHuissier', db_collation='latin1_swedish_ci', blank=True, null=True)
-    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
 
-    class Meta:
-        managed = False
-        db_table = 'huissier'
 
 
 class Paiementhonoraires(models.Model):
@@ -351,7 +344,7 @@ class Paiementhonoraires(models.Model):
     datepaiement = models.DateField(db_column='datePaiement')
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'paiementhonoraires'
 
 
@@ -363,7 +356,7 @@ class Participationexpertetape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationexpertetape'
         unique_together = (('idetape', 'idexpert'),)
 
@@ -376,7 +369,7 @@ class Participationhuissieretape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationhuissieretape'
         unique_together = (('idetape', 'idhuissier'),)
 
@@ -389,7 +382,7 @@ class Participationtemoinetape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationtemoinetape'
         unique_together = (('idetape', 'idtemoin'),)
 
@@ -402,7 +395,7 @@ class StatutAffaire(models.Model):
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_affaire'
 
 
@@ -414,7 +407,7 @@ class StatutAffairetribunal(models.Model):
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_affairetribunal'
 
 
@@ -426,7 +419,7 @@ class StatutAudience(models.Model):
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_audience'
 
 
@@ -438,7 +431,7 @@ class StatutEtape(models.Model):
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_etape'
 
 
@@ -450,7 +443,7 @@ class StatutFacture(models.Model):
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_facture'
 
 
@@ -462,7 +455,7 @@ class Temoin(models.Model):
     telephonetemoin = models.CharField(db_column='telephoneTemoin', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'temoin'
 
 
