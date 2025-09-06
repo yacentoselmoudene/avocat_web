@@ -89,11 +89,28 @@ WSGI_APPLICATION = 'avocat.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cabinetavocat',
-        'USER': 'root',
+        'NAME': 'lrsmfma_ligue_souss',
+        'USER': 'lrsmfma_yacentos',
         'PASSWORD': 'Bismillah@99',
-        'HOST': 'localhost',
-        'PORT': '3306',
+        'HOST':'lrsmf.ma',
+        'PORT':'3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+        },
+    }
+}
+
+#'USER': 'root',
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+
+        'NAME': 'cabinetavocat',
+        'USER': 'lrsmfma_yacentos', #'USER': 'root',
+        'PASSWORD': 'Bismillah@99',
+        'HOST':'lrsmf.ma',  #'HOST': 'localhost',
+        'PORT':'3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'; SET character_set_connection=utf8mb4; SET collation_connection=utf8mb4_unicode_ci; SET collation_server=utf8mb4_unicode_ci;",
