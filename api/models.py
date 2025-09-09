@@ -5,19 +5,22 @@ import re
 from django.core.exceptions import ValidationError
 
 class Avocat(models.Model):
-    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomavocat = models.CharField(db_column='nomAvocat', max_length=255, db_collation='latin1_swedish_ci')
-    specialisation = models.CharField(max_length=255, db_collation='latin1_swedish_ci', blank=True, null=True)
+    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
+    nomavocat_fr = models.CharField(db_column='nomAvocat_fr', max_length=255, db_collation='utf8mb4_unicode_ci')
+    nomavocat_ar = models.CharField(db_column='nomAvocat_ar', max_length=255, db_collation='utf8mb4_unicode_ci')
+    specialisation = models.CharField(max_length=255, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
 
     class Meta:
         managed = True
         db_table = 'avocat'
 
 class Huissier(models.Model):
-    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomhuissier = models.CharField(db_column='nomHuissier', max_length=255, db_collation='latin1_swedish_ci')
-    adressehuissier = models.TextField(db_column='adresseHuissier', db_collation='latin1_swedish_ci', blank=True, null=True)
-    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
+    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
+    nomhuissier_fr = models.CharField(db_column='nomHuissier_fr', max_length=255, db_collation='utf8mb4_unicode_ci')
+    nomhuissier_ar = models.CharField(db_column='nomHuissier_ar', max_length=255, db_collation='utf8mb4_unicode_ci')
+    adressehuissier_fr = models.TextField(db_column='adresseHuissier_fr', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    adressehuissier_ar = models.TextField(db_column='adresseHuissier_ar', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
 
     class Meta:
         managed = True
@@ -27,7 +30,8 @@ class Huissier(models.Model):
 #categorie 1
 class TypeAffairePrincipale(models.Model):
     code = models.CharField(max_length=10, unique=True)
-    libelle = models.CharField(max_length=255)
+    libelle_fr = models.CharField(max_length=255)
+    libelle_ar = models.CharField(max_length=255)
 
     class Meta:
         db_table = 'type_affaire_principale'
@@ -40,7 +44,8 @@ class TypeAffairePrincipale(models.Model):
 #categorie 2
 class SousTypeAffaire(models.Model):
     code = models.CharField(max_length=10, unique=True)
-    libelle = models.CharField(max_length=255)
+    libelle_fr = models.CharField(max_length=255)
+    libelle_ar = models.CharField(max_length=255)
     type_principale = models.ForeignKey(TypeAffairePrincipale, on_delete=models.CASCADE)
 
     class Meta:
@@ -54,7 +59,8 @@ class SousTypeAffaire(models.Model):
 # categorie 3
 class CategorieAffaire(models.Model):
     code = models.CharField(max_length=10, unique=True)
-    libelle = models.CharField(max_length=255)
+    libelle_fr = models.CharField(max_length=255)
+    libelle_ar = models.CharField(max_length=255)
     sous_type = models.ForeignKey(SousTypeAffaire, on_delete=models.CASCADE)
 
     class Meta:
@@ -164,7 +170,7 @@ class Audience(models.Model):
     idtribunal = models.ForeignKey('Tribunal', models.DO_NOTHING, db_column='idTribunal', blank=True, null=True)
     dateaudience = models.DateField(db_column='dateAudience')
     heureaudience = models.TimeField(db_column='heureAudience', blank=True, null=True)
-    remarques = models.TextField(db_collation='latin1_swedish_ci', blank=True, null=True)
+    remarques = models.TextField(db_collation='utf8mb4_unicode_ci', blank=True, null=True)
     
     #  champs pour les rendez-vous
     type_rendez_vous = models.CharField(
@@ -179,7 +185,8 @@ class Audience(models.Model):
         default='AUDIENCE'
     )
     titre = models.CharField(max_length=200, null=True, blank=True)
-    description = models.TextField(null=True, blank=True)
+    description_fr = models.TextField(null=True, blank=True)
+    description_ar = models.TextField(null=True, blank=True)
     lieu = models.CharField(max_length=200, null=True, blank=True)
     statut = models.CharField(
         max_length=20,
@@ -205,12 +212,15 @@ class Audience(models.Model):
 
 class Client(models.Model):
     idclient = models.AutoField(db_column='idClient', primary_key=True)
-    nomclient = models.CharField(db_column='nomClient', max_length=255, db_collation='latin1_swedish_ci')
+    nomclient_fr = models.CharField(db_column='nomClient_fr', max_length=255, db_collation='utf8mb4_unicode_ci')
+    nomclient_ar = models.CharField(db_column='nomClient_ar', max_length=255, db_collation='utf8mb4_unicode_ci')
     prenomclient = models.CharField(db_column='prenomClient', max_length=255, blank=True, null=True)
-    adresse1 = models.CharField(db_column='adresse1', max_length=255, blank=True, null=True)
-    adresse2 = models.CharField(db_column='adresse2', max_length=255, blank=True, null=True)
-    numtel1 = models.CharField(db_column='numTel1', max_length=20, blank=True, null=True)
-    numtel2 = models.CharField(db_column='numTel2', max_length=20, blank=True, null=True)
+    adresse1_fr = models.CharField(db_column='adresse1_fr', max_length=255, blank=True, null=True)
+    adresse1_ar = models.CharField(db_column='adresse1_ar', max_length=255, blank=True, null=True)
+    adresse2_fr = models.CharField(db_column='adresse2_fr', max_length=255, blank=True, null=True)
+    adresse2_ar = models.CharField(db_column='adresse2_ar', max_length=255, blank=True, null=True)
+    numtel1 = models.CharField(db_column='numTel1_fr', max_length=20, blank=True, null=True)
+    numtel2 = models.CharField(db_column='numTel2_ar', max_length=20, blank=True, null=True)
     email = models.EmailField(db_column='email', max_length=255, blank=True, null=True)
 
     idtypeclient = models.ForeignKey('TypeClient', models.DO_NOTHING, db_column='idTypeClient', blank=True, null=True)
@@ -218,7 +228,7 @@ class Client(models.Model):
     preferred_language = models.CharField(
         max_length=5,
         choices=[('fr', 'Français'), ('ar', 'العربية')],
-        default='fr',
+        default='ar',
         null=True,
         blank=True,
         help_text="Langue préférée de l'interface utilisateur"
@@ -311,10 +321,11 @@ class Etapejudiciaire(models.Model):
 
 
 class Expert(models.Model):
-    idexpert = models.CharField(db_column='idExpert', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomexpert = models.CharField(db_column='nomExpert', max_length=255, db_collation='latin1_swedish_ci')
-    specialisationexpert = models.CharField(db_column='specialisationExpert', max_length=255, db_collation='latin1_swedish_ci')
-    telephoneexpert = models.CharField(db_column='telephoneExpert', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
+    idexpert = models.CharField(db_column='idExpert', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
+    nomexpert_fr = models.CharField(db_column='nomExpert_fr', max_length=255, db_collation='utf8mb4_unicode_ci')
+    nomexpert_ar = models.CharField(db_column='nomExpert_ar', max_length=255, db_collation='utf8mb4_unicode_ci')
+    specialisationexpert = models.CharField(db_column='specialisationExpert', max_length=255, db_collation='utf8mb4_unicode_ci')
+    telephoneexpert = models.CharField(db_column='telephoneExpert', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
 
     class Meta:
         managed = True
@@ -322,7 +333,7 @@ class Expert(models.Model):
 
 
 class Facture(models.Model):
-    idfacture = models.CharField(db_column='idFacture', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
+    idfacture = models.CharField(db_column='idFacture', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
     montantfacture = models.FloatField(db_column='montantFacture')
     datefacture = models.DateField(db_column='dateFacture')
     idclient = models.ForeignKey(Client, models.DO_NOTHING, db_column='idClient', blank=True, null=True)
@@ -331,12 +342,8 @@ class Facture(models.Model):
         managed = True
         db_table = 'facture'
 
-
-
-
-
 class Paiementhonoraires(models.Model):
-    idpaiement = models.CharField(db_column='idPaiement', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
+    idpaiement = models.CharField(db_column='idPaiement', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
     idcontrat = models.ForeignKey(Contrat, models.DO_NOTHING, db_column='idContrat', blank=True, null=True)
     idetape = models.ForeignKey(Etapejudiciaire, models.CASCADE, db_column='idEtape', blank=True, null=True)
     pourcentagepaiement = models.FloatField(db_column='pourcentagePaiement')
@@ -390,7 +397,7 @@ class Participationtemoinetape(models.Model):
 class StatutAffaire(models.Model):
     idstatutaffaire = models.AutoField(db_column='idStatutAffaire', primary_key=True)
     idaffaire = models.ForeignKey(Affairejudiciaire, models.DO_NOTHING, db_column='idAffaire')
-    libellestatutaffaire = models.CharField(db_column='libelleStatutAffaire', max_length=100, db_collation='latin1_swedish_ci')
+    libellestatutaffaire = models.CharField(db_column='libelleStatutAffaire', max_length=100, db_collation='utf8mb4_unicode_ci')
     datedebut = models.DateField(db_column='dateDebut')
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
@@ -402,7 +409,7 @@ class StatutAffaire(models.Model):
 class StatutAffairetribunal(models.Model):
     affairetribunal = models.ForeignKey(Affairetribunal, on_delete=models.CASCADE,related_name='statuts_affairetribunal')
     idstatutaffairetribunal = models.AutoField(db_column='idStatutAffaireTribunal', primary_key=True)
-    libellestatutaffairetribunal = models.CharField(db_column='libelleStatutAffaireTribunal', max_length=100, db_collation='latin1_swedish_ci')
+    libellestatutaffairetribunal = models.CharField(db_column='libelleStatutAffaireTribunal', max_length=100, db_collation='utf8mb4_unicode_ci')
     datedebut = models.DateField(db_column='dateDebut')
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
@@ -414,7 +421,7 @@ class StatutAffairetribunal(models.Model):
 class StatutAudience(models.Model):
     idstatutaudience = models.AutoField(db_column='idStatutAudience', primary_key=True)
     idaudience = models.ForeignKey(Audience, models.CASCADE, db_column='idAudience')
-    libellestatutaudience = models.CharField(db_column='libelleStatutAudience', max_length=100, db_collation='latin1_swedish_ci')
+    libellestatutaudience = models.CharField(db_column='libelleStatutAudience', max_length=100, db_collation='utf8mb4_unicode_ci')
     datedebut = models.DateField(db_column='dateDebut')
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
@@ -426,7 +433,7 @@ class StatutAudience(models.Model):
 class StatutEtape(models.Model):
     idstatutetape = models.AutoField(db_column='idStatutEtape', primary_key=True)
     idetape = models.ForeignKey(Etapejudiciaire, models.CASCADE, db_column='idEtape')
-    libellestatutetape = models.CharField(db_column='libelleStatutEtape', max_length=100, db_collation='latin1_swedish_ci')
+    libellestatutetape = models.CharField(db_column='libelleStatutEtape', max_length=100, db_collation='utf8mb4_unicode_ci')
     datedebut = models.DateField(db_column='dateDebut')
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
@@ -438,7 +445,7 @@ class StatutEtape(models.Model):
 class StatutFacture(models.Model):
     idstatutfacture = models.AutoField(db_column='idStatutFacture', primary_key=True)
     idfacture = models.ForeignKey(Facture, models.DO_NOTHING, db_column='idFacture')
-    libellestatutfacture = models.CharField(db_column='libelleStatutFacture', max_length=100, db_collation='latin1_swedish_ci')
+    libellestatutfacture = models.CharField(db_column='libelleStatutFacture', max_length=100, db_collation='utf8mb4_unicode_ci')
     datedebut = models.DateField(db_column='dateDebut')
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)
 
@@ -448,11 +455,13 @@ class StatutFacture(models.Model):
 
 
 class Temoin(models.Model):
-    idtemoin = models.CharField(db_column='idTemoin', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')
-    nomtemoin = models.CharField(db_column='nomTemoin', max_length=255, db_collation='latin1_swedish_ci')
-    adressetemoin = models.TextField(db_column='adresseTemoin', db_collation='latin1_swedish_ci', blank=True, null=True)
-    roletemoin = models.CharField(db_column='roleTemoin', max_length=100, db_collation='latin1_swedish_ci')
-    telephonetemoin = models.CharField(db_column='telephoneTemoin', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)
+    idtemoin = models.CharField(db_column='idTemoin', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')
+    nomtemoin_fr = models.CharField(db_column='nomTemoin_fr', max_length=255, db_collation='utf8mb4_unicode_ci')
+    nomtemoin_ar = models.CharField(db_column='nomTemoin_ar', max_length=255, db_collation='utf8mb4_unicode_ci')
+    adressetemoin_fr = models.TextField(db_column='adresseTemoin_fr', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    adressetemoin_ar = models.TextField(db_column='adresseTemoin_ar', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    roletemoin = models.CharField(db_column='roleTemoin', max_length=100, db_collation='utf8mb4_unicode_ci')
+    telephonetemoin = models.CharField(db_column='telephoneTemoin', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
 
     class Meta:
         managed = True
@@ -461,9 +470,12 @@ class Temoin(models.Model):
 
 class Tribunal(models.Model):
     idtribunal = models.CharField(primary_key=True, max_length=50)
-    nomtribunal = models.CharField(max_length=255)
-    adressetribunal = models.TextField(blank=True, null=True)
-    villetribunal = models.CharField(max_length=100, blank=True, null=True)
+    nomtribunal_fr = models.CharField(max_length=255)
+    nomtribunal_ar = models.CharField(max_length=255)
+    adressetribunal_fr = models.TextField(blank=True, null=True)
+    adressetribunal_ar = models.TextField(blank=True, null=True)
+    villetribunal_fr = models.CharField(max_length=100, blank=True, null=True)
+    villetribunal_ar = models.CharField(max_length=100, blank=True, null=True)
     telephonetribunal = models.CharField(max_length=20, blank=True, null=True)
     idtypetribunal = models.ForeignKey('TypeTribunal', models.DO_NOTHING, db_column='idTypeTribunal', blank=True, null=True)
     
@@ -476,7 +488,7 @@ class Tribunal(models.Model):
     categories_affaires = models.ManyToManyField(CategorieAffaire, blank=True, related_name='tribunaux')
 
     def __str__(self):
-        return f"{self.nomtribunal} - {self.villetribunal}"
+        return f"{self.nomtribunal_fr} - {self.villetribunal_fr}"
 
     def get_niveau(self):
         # niveau du tribunal
@@ -512,7 +524,8 @@ class Tribunal(models.Model):
 
 class TypeAffaire(models.Model):
     idtypeaffaire = models.AutoField(db_column='idTypeAffaire', primary_key=True)
-    libelletypeaffaire = models.CharField(db_column='libelleTypeAffaire', max_length=100, db_collation='latin1_swedish_ci')
+    libelletypeaffaire_fr = models.CharField(db_column='libelleTypeAffaire_fr', max_length=100, db_collation='utf8mb4_unicode_ci')
+    libelletypeaffaire_ar = models.CharField(db_column='libelleTypeAffaire_ar', max_length=100, db_collation='utf8mb4_unicode_ci')
 
     class Meta:
         managed = True
@@ -521,10 +534,11 @@ class TypeAffaire(models.Model):
 
 class TypeClient(models.Model):
     idtypeclient = models.AutoField(db_column='idTypeClient', primary_key=True)
-    libelletypeclient = models.CharField(db_column='libelleTypeClient', max_length=100, db_collation='latin1_swedish_ci')
+    libelletypeclient_fr = models.CharField(db_column='libelleTypeClient_fr', max_length=100, db_collation='utf8mb4_unicode_ci')
+    libelletypeclient_ar = models.CharField(db_column='libelleTypeClient_ar', max_length=100, db_collation='utf8mb4_unicode_ci')
 
     def __str__(self):
-        return self.libelletypeclient
+        return self.libelletypeclient_fr
 
     class Meta:
         managed = True
@@ -534,7 +548,8 @@ class TypeClient(models.Model):
 
 class TypeContrat(models.Model):
     idtypecontrat = models.AutoField(db_column='idTypeContrat', primary_key=True)
-    libelletypecontrat = models.CharField(db_column='libelleTypeContrat', max_length=100, db_collation='latin1_swedish_ci')
+    libelletypecontrat_fr = models.CharField(db_column='libelleTypeContrat_fr', max_length=100, db_collation='utf8mb4_unicode_ci')
+    libelletypecontrat_ar = models.CharField(db_column='libelleTypeContrat_ar', max_length=100, db_collation='utf8mb4_unicode_ci')
 
     class Meta:
         managed = True
@@ -543,7 +558,7 @@ class TypeContrat(models.Model):
 
 class TypeEtape(models.Model):
     idtypeetape = models.AutoField(db_column='idTypeEtape', primary_key=True)
-    libelletypeetape = models.CharField(db_column='libelleTypeEtape', max_length=100, db_collation='latin1_swedish_ci')
+    libelletypeetape = models.CharField(db_column='libelleTypeEtape', max_length=100, db_collation='utf8mb4_unicode_ci')
 
     class Meta:
         managed = True
@@ -552,7 +567,8 @@ class TypeEtape(models.Model):
 
 class TypeIntervention(models.Model):
     idtypeintervention = models.AutoField(db_column='idTypeIntervention', primary_key=True)
-    libelletypeintervention = models.CharField(db_column='libelleTypeIntervention', max_length=100, db_collation='latin1_swedish_ci')
+    libelletypeintervention_fr = models.CharField(db_column='libelleTypeIntervention_fr', max_length=100, db_collation='utf8mb4_unicode_ci')
+    libelletypeintervention_ar = models.CharField(db_column='libelleTypeIntervention_ar', max_length=100, db_collation='utf8mb4_unicode_ci')
 
     class Meta:
         managed = True
@@ -561,10 +577,12 @@ class TypeIntervention(models.Model):
 
 class TypeTribunal(models.Model):
     idtypetribunal = models.AutoField(primary_key=True)
-    libelletypetribunal = models.CharField(max_length=100)
+    libelletypetribunal_fr = models.CharField(max_length=100)
+    libelletypetribunal_ar = models.CharField(max_length=100)
     code_type = models.CharField(max_length=10, unique=True, help_text="Code unique pour identifier le type")
     niveau = models.CharField(max_length=50, help_text="Niveau dans la hiérarchie judiciaire")
-    description = models.TextField(blank=True, null=True)
+    description_fr = models.TextField(blank=True, null=True)
+    description_ar = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.libelletypetribunal} ({self.niveau})"
@@ -577,7 +595,8 @@ class TypeTribunal(models.Model):
 
 class FonctionClient(models.Model):
     idfonction = models.AutoField(primary_key=True)
-    libellefonction = models.CharField(max_length=100, unique=True)
+    libellefonction_fr = models.CharField(max_length=100, unique=True)
+    libellefonction_ar = models.CharField(max_length=100, unique=True)
 
     class Meta:
         db_table = 'fonction_client'
@@ -585,11 +604,14 @@ class FonctionClient(models.Model):
 
 class Opposant(models.Model):
     idopposant = models.AutoField(db_column='idOpposant', primary_key=True)
-    nomopposant = models.CharField(db_column='nomOpposant', max_length=255)
-    adresse1 = models.CharField(db_column='adresse1', max_length=255, blank=True, null=True)
-    adresse2 = models.CharField(db_column='adresse2', max_length=255, blank=True, null=True)
-    numtel1 = models.CharField(db_column='numTel1', max_length=20, blank=True, null=True)
-    numtel2 = models.CharField(db_column='numTel2', max_length=20, blank=True, null=True)
+    nomopposant_fr = models.CharField(db_column='nomOpposant_fr', max_length=255)
+    nomopposant_ar = models.CharField(db_column='nomOpposant_ar', max_length=255)
+    adresse1_fr = models.CharField(db_column='adresse1_fr', max_length=255, blank=True, null=True)
+    adresse1_ar = models.CharField(db_column='adresse1_ar', max_length=255, blank=True, null=True)
+    adresse2_fr = models.CharField(db_column='adresse2_fr', max_length=255, blank=True, null=True)
+    adresse2_ar = models.CharField(db_column='adresse2_ar', max_length=255, blank=True, null=True)
+    numtel1 = models.CharField(db_column='numTel1_fr', max_length=20, blank=True, null=True)
+    numtel2 = models.CharField(db_column='numTel2_ar', max_length=20, blank=True, null=True)
     email = models.EmailField(db_column='email', max_length=255, blank=True, null=True)
     class Meta:
         db_table = 'opposant'
@@ -620,10 +642,14 @@ class AffaireOpposantAvocat(models.Model):
 # table juge
 class Juge(models.Model):
     idjuge = models.AutoField(primary_key=True)
-    nomjuge = models.CharField(max_length=255)
-    prenomjuge = models.CharField(max_length=255)
+    nomjuge_fr = models.CharField(max_length=255)
+    nomjuge_ar = models.CharField(max_length=255)
+    
+    prenomjuge_fr = models.CharField(max_length=255)
+    prenomjuge_ar = models.CharField(max_length=255)
     matricule = models.CharField(max_length=50, unique=True, help_text="Numéro matricule du juge")
-    specialisation = models.CharField(max_length=100, blank=True, null=True, help_text="Spécialisation du juge")
+    specialisation_fr = models.CharField(max_length=100, blank=True, null=True, help_text="Spécialisation du juge")
+    specialisation_ar = models.CharField(max_length=100, blank=True, null=True, help_text="Spécialisation du juge")
     actif = models.BooleanField(default=True, help_text="Si le juge est actuellement en fonction")
     telephone = models.CharField(max_length=20, blank=True, null=True)
 
@@ -676,7 +702,8 @@ class DemandesFichier(models.Model):
     
     id = models.AutoField(primary_key=True)
     type_demande = models.CharField(max_length=50, choices=TYPE_DEMANDE_CHOICES)
-    description = models.TextField(help_text="Description détaillée de la demande")
+    description_fr = models.TextField(help_text="Description détaillée de la demande")
+    description_ar = models.TextField(help_text="Description détaillée de la demande")
     date_demande = models.DateTimeField(auto_now_add=True)
     date_limite = models.DateField(blank=True, null=True, help_text="Date limite pour la réponse")
     statut = models.CharField(max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')

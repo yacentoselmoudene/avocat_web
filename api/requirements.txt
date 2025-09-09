@@ -1,0 +1,21 @@
+# ---- Core ----
+Django==5.2.4
+
+# ---- REST & Auth ----
+djangorestframework>=3.15.1,<3.17
+djangorestframework-simplejwt>=5.3.1,<6
+# (DRF inclut authtoken via django.contrib.auth)
+
+# ---- CORS, Filters, Utils ----
+django-cors-headers>=4.3,<4.6
+django-filter>=24.2,<25
+django-extensions>=3.2,<4
+
+# ---- Static files (prod) ----
+whitenoise>=6.6,<7
+
+# ---- MySQL driver (choix 1 recommandé)
+mysqlclient>=2.2.4,<3
+
+# ---- (Optionnel) si tu buildes sous Windows localement
+# tzdata>=2024.1
