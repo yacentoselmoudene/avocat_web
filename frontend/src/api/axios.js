@@ -3,7 +3,7 @@ import axios from "axios";
 
 // instance axios personnalisée
 const api = axios.create({
-  baseURL: "http://localhost:8000/",
+  baseURL: "http://lmohami.ma:8000/",
 });
 
 // Intercepteur qui ajoute le token à chaque requête
