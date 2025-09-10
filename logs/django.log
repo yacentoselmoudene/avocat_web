@@ -168,3 +168,4 @@ Watching for file changes with StatReloader
 "GET /api/clients/ HTTP/1.1" 200 2
 "GET /api/clients/ HTTP/1.1" 401 172
 "GET /api/typeclients/ HTTP/1.1" 401 172
+Watching for file changes with StatReloader
