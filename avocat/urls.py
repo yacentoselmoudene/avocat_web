@@ -83,8 +83,8 @@ router.register(r'devices', DeviceViewSet, basename='device')
 
 
 urlpatterns = [
-    path('clients/me/', ClientMeView.as_view(), name='client-me'),
-    path('admin/', admin.site.urls),
+    path('api/clients/me/', ClientMeView.as_view(), name='client-me'),
+    path('api/admin/', admin.site.urls),
     path('api/create-client/', CreateClientView.as_view(), name='create-client'),
     path('api/classification/', ClassificationAffaireView.as_view(), name='classification-affaire'),
     path('api/tribunaux-suggestion/', TribunalSuggestionView.as_view(), name='tribunaux-suggestion'),

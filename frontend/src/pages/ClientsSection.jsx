@@ -2,11 +2,6 @@ import React, { useEffect, useState, useRef } from "react";
 import api from "../api/axios";
 import ErrorMessage from "../components/ErrorMessage";
 import { useTranslation } from "react-i18next";
-import { api, mediaUrl } from "@/lib/api"; // see alias below
-// OR if you don't set an alias: import { api, mediaUrl } from "../lib/api";
-
-const filePath = detailClient?.contrat?.fichier;
-const href = mediaUrl(filePath);
 
 export default function ClientsSection() {
   const { t, i18n } = useTranslation();
@@ -1114,22 +1109,21 @@ export default function ClientsSection() {
                 <h4 style={{ margin: 0, marginBottom: 8 }}>{t("Contrat")}</h4>
                 {/*               <div><b>ID contrat :</b> {detailClient.contrat.idcontrat}</div> */}
                 {detailClient.contrat && detailClient.contrat.fichier && (
-
-                    <a
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{color: "#1976d2", textDecoration: "underline"}}
-                    >
-                        {t("Télécharger le contrat")}
-                    </a>
-                    )}
+                  <a
+                    href={`http://localhost:8000${detailClient.contrat.fichier}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#1976d2", textDecoration: "underline" }}
+                  >
+                    {t("Télécharger le contrat")}
+                  </a>
+                )}
               </div>
-              )}
+            )}
         </div>
       )}
 
-<div
+      <div
         className={`collapsible ${showAddForm ? "open" : ""}`}
         style={{ display: "none" }}
       >

@@ -1144,6 +1144,7 @@ class TypeInterventionViewSet(viewsets.ModelViewSet):
 
 class TribunalViewSet(viewsets.ModelViewSet):
     queryset = Tribunal.objects.all()
+    print("queryset :" , queryset)
     serializer_class = TribunalSerializer
     
     def get_queryset(self):

@@ -1,37 +1,33 @@
-// frontend/src/api/axios.js
 import axios from "axios";
 
-// Read from Vite env; default to same-origin /api
-const API_BASE = (import.meta.env.VITE_API_URL || "/api").replace(/\/+$/, "");
 
+// instance axios personnalisée
 const api = axios.create({
-  baseURL: API_BASE, // dev: /api (proxied) | prod: /api (same origin)
-  // withCredentials: true, // only if you use cookie auth (you're using Bearer, so leave false)
+  baseURL: "http://localhost:8000/",
 });
 
-// Attach JWT if present
+// Intercepteur qui ajoute le token à chaque requête
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// Handle 401s safely (avoid reload loops)
+// Interceptor qui gére les erreurs 401
 api.interceptors.response.use(
-  (res) => res,
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
-      // Redirect to login only if you're not already there
-      if (!window.location.pathname.startsWith("/login")) {
-        window.location.href = "/login";
-      }
+      window.location.reload(); // Forcer le retour à la page de login
     }
     return Promise.reject(error);
   }
 );
 
-export default api;
+export default api; 
