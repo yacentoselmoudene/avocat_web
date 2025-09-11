@@ -24,7 +24,7 @@ const AgendaPage = () => {
   useEffect(() => {
     loadRendezVous();
 
-    // Vérifier les paramètres d'URL pour scroll vers un RDV spécifique
+    // Vérification les paramètres d'URL pour scroll vers un RDV spécifique
     const urlParams = new URLSearchParams(window.location.search);
     const rdvId = urlParams.get("rdv_id");
     const affaireId = urlParams.get("affaire_id");
@@ -51,12 +51,12 @@ const AgendaPage = () => {
       setModalOpen(true);
     }
 
-    // Détecte le paramètre ?action=create pour ouvrir automatiquement le modal
+
     if (action === "create") {
       // Ouvrir automatiquement le modal de création
       setModalOpen(true);
 
-      // Nettoyer l'URL en supprimant le paramètre
+
       const newUrl = window.location.pathname;
       window.history.replaceState({}, document.title, newUrl);
     }
@@ -81,7 +81,7 @@ const AgendaPage = () => {
 
   const handleEditRendezVous = async (rendezVous) => {
     try {
-      // Charger l'affaire associée si elle existe
+      // Charger l'affaire associée
       if (rendezVous.idaffaire) {
         const affaireResponse = await api.get(
           `/api/affaires/${rendezVous.idaffaire}/`,

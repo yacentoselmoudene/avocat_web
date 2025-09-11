@@ -54,7 +54,7 @@ export default function AffairesSection() {
     affaire: null,
   });
 
-  // Nouvel état pour contrôler l'affichage du formulaire de création
+  // état pour contrôler l'affichage du formulaire de création
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   // useEffect pour détecter le paramètre ?action=create dans l'URL
@@ -141,7 +141,7 @@ export default function AffairesSection() {
             setTribunalSelectionne(null);
           }
         } else if (data.suggestions) {
-          //cde partiel
+          //code partiel
           setClassification(null);
           setSuggestions(data.suggestions);
           setTribunaux([]);
@@ -199,7 +199,7 @@ export default function AffairesSection() {
     }
   }, [fonctions]);
 
-  // useEffect pour charger les données de progression
+  // charger les données de progression
   useEffect(() => {
     affaires.forEach((affaire) => {
       getEtapeActuelle(affaire.idaffaire);
@@ -211,7 +211,7 @@ export default function AffairesSection() {
     const handleReloadAffaires = () => {
       console.log("🔄 Rechargement des affaires demandé...");
       fetchAffaires();
-      // Recharger également les étapes actuelles et progressions
+      // Recharger  les étapes actuelles et progressions
       setTimeout(() => {
         affaires.forEach((affaire) => {
           getEtapeActuelle(affaire.idaffaire);
@@ -235,10 +235,8 @@ export default function AffairesSection() {
     const statut = a.statut_courant || "";
     const typeClient = client
       ? client.type_client
-        ? client.type_client.toLowerCase()
-        : typesClient
-            .find((t) => t.idtypeclient === client.idtypeclient)
-            ?.libelletypeclient.toLowerCase() || ""
+        ? String(client.type_client).toLowerCase()
+        : (typesClient.find((t) => t.idtypeclient === client.idtypeclient)?.libelletypeclient ?? '').toLowerCase() || ''
       : "";
     const matchSearch =
       search === "" ||
@@ -424,14 +422,14 @@ export default function AffairesSection() {
         datecloture: null,
         idclient: idclient,
         idfonctionclient,
-        roleClient: roleClient, // Ajout du rôle client
+        roleClient: roleClient,
         idopposant: idopposant,
-        idtypeaffaire: idtypeaffaire, // Ajout du type d'affaire
+        idtypeaffaire: idtypeaffaire,
         affaire_parent: affaireParentId, // Relation reflexive pour l'appel
       });
       const idaffaire = affaireRes.data.idaffaire;
 
-      // 4. Ajout du tribunal sélectionné
+      //  Ajout du tribunal sélectionné
       if (tribunalSelectionne) {
         console.log("Tribunal sélectionné:", tribunalSelectionne);
         console.log(
@@ -572,7 +570,7 @@ export default function AffairesSection() {
     }
   };
 
-  // Composant pour afficher le statut progression (emoji cliquable)
+  // Composant pour afficher le statut progression
   const WorkflowStatus = ({ affaireId }) => {
     const navigate = useNavigate();
     return (
@@ -596,7 +594,7 @@ export default function AffairesSection() {
     const etapeActuelle = etapesActuelles[affaire.idaffaire];
     const etape = etapeActuelle?.etape_actuelle || affaire?.etape_actuelle;
 
-    // Amélioration de la récupération du label
+
     let label = "-";
     if (etape) {
       if (i18n.language === "ar") {
@@ -608,7 +606,7 @@ export default function AffairesSection() {
       }
     }
 
-    // Debug pour voir ce qui est reçu
+    // Debug
     console.log(
       "EtapeActuelleBadge - affaire:",
       affaire.idaffaire,

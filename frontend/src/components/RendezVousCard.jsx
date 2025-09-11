@@ -7,7 +7,8 @@ const RendezVousCard = ({
   onToggle,
   onAction,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isArabic = (i18n.language || '').startsWith('ar');
 
   const getTypeIcon = (type) => {
     const icons = {
@@ -28,17 +29,17 @@ const RendezVousCard = ({
     if (type && typeof type === "string" && type.trim().length > 0) {
       const code = type.trim().toUpperCase();
       const map = {
-        AUDIENCE: "Audience judiciaire",
-        CONSULTATION: "Consultation avocat-client",
-        REUNION: "Réunion de préparation",
-        SIGNATURE: "Signature de documents",
-        AUTRE: "Autre rendez-vous",
+        AUDIENCE: t("Audience judiciaire"),
+        CONSULTATION: t("Consultation avocat-client"),
+        REUNION: t("Réunion de préparation"),
+        SIGNATURE: t("Signature de documents"),
+        AUTRE: t("Autre rendez-vous"),
       };
       if (map[code]) return map[code];
       // Essayer de mettre en forme proprement des valeurs libres
       return code.charAt(0) + code.slice(1).toLowerCase();
     }
-    return "Autre rendez-vous";
+    return t("Autre rendez-vous");
   };
 
   const getTypeColor = (type) => {
@@ -88,7 +89,7 @@ const RendezVousCard = ({
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("fr-FR", {
+    return date.toLocaleDateString(isArabic ? "ar-EG" : "fr-FR", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -126,9 +127,13 @@ const RendezVousCard = ({
           }}
         >
           <span>
-            {getTypeLabel(
-              rendezVous.type_rendez_vous,
-              rendezVous.type_rendez_vous_display,
+            {(
+              rendezVous.titre && String(rendezVous.titre).trim().length > 0
+                ? rendezVous.titre
+                : getTypeLabel(
+                    rendezVous.type_rendez_vous,
+                    rendezVous.type_rendez_vous_display,
+                  )
             )}
           </span>
         </div>
@@ -141,7 +146,7 @@ const RendezVousCard = ({
                 color: "#2e7d32",
               }}
             >
-              Aujourd'hui
+              {t("Aujourd'hui")}
             </span>
           )}
           {isTomorrow(rendezVous.dateaudience) && (
@@ -152,7 +157,7 @@ const RendezVousCard = ({
                 color: "#f57f17",
               }}
             >
-              Demain
+              {t("Demain")}
             </span>
           )}
           {isPast(rendezVous.dateaudience) && (
@@ -163,7 +168,7 @@ const RendezVousCard = ({
                 color: "#c62828",
               }}
             >
-              En retard
+              {t("En retard")}
             </span>
           )}
           <span style={datePillStyle}>
@@ -218,19 +223,19 @@ const RendezVousCard = ({
           })()}
           <div style={briefMetaStyle}>
             {rendezVous.client_nom && (
-              <span style={miniChipStyle}>Client: {rendezVous.client_nom}</span>
+              <span style={miniChipStyle}>{t("Client")}: {rendezVous.client_nom}</span>
             )}
             {rendezVous.affaire_numero && (
               <span style={miniChipStyle}>
-                Dossier: {rendezVous.affaire_numero}
+                {t("Dossier")}: {rendezVous.affaire_numero}
               </span>
             )}
             {rendezVous.lieu && (
-              <span style={miniChipStyle}>Lieu: {rendezVous.lieu}</span>
+              <span style={miniChipStyle}>{t("Lieu")}: {rendezVous.lieu}</span>
             )}
             {rendezVous.tribunal_nom && (
               <span style={miniChipStyle}>
-                Tribunal: {rendezVous.tribunal_nom}
+                {t("Tribunal")}: {rendezVous.tribunal_nom}
               </span>
             )}
           </div>
@@ -239,37 +244,37 @@ const RendezVousCard = ({
           <button
             onClick={onToggle}
             style={expandButtonStyle}
-            title={expanded ? "Réduire" : "Détails"}
+            title={expanded ? t("Réduire") : t("Détails")}
           >
-            {expanded ? "Moins" : "Plus"}
+            {expanded ? t("Moins") : t("Plus")}
           </button>
           <button
             style={{ ...actionButtonStyle, color: "#4CAF50" }}
             onClick={() => onAction && onAction("CONFIRME", rendezVous)}
-            title="Confirmer"
+            title={t("Confirmer")}
           >
-            Confirmer
+            {t("Confirmer")}
           </button>
           <button
             style={{ ...actionButtonStyle, color: "#f44336" }}
             onClick={() => onAction && onAction("ANNULE", rendezVous)}
-            title="Annuler"
+            title={t("Annuler")}
           >
-            Annuler
+            {t("Annuler")}
           </button>
           <button
             style={{ ...actionButtonStyle, color: "#1976d2" }}
             onClick={() => onAction && onAction("EDIT", rendezVous)}
-            title="Modifier"
+            title={t("Modifier")}
           >
-            Modifier
+            {t("Modifier")}
           </button>
           <button
             style={{ ...actionButtonStyle, color: "#d32f2f" }}
             onClick={() => onAction && onAction("DELETE", rendezVous)}
-            title="Supprimer"
+            title={t("Supprimer")}
           >
-            Supprimer
+            {t("Supprimer")}
           </button>
         </div>
       </div>
@@ -278,7 +283,7 @@ const RendezVousCard = ({
         <div style={detailsBoxStyle}>
           {rendezVous.client_nom && (
             <div style={infoRowStyle}>
-              <span style={infoLabelStyle}>Client</span>
+              <span style={infoLabelStyle}>{t("Client")}</span>
               <span style={infoValueStyle}>
                 {rendezVous.client_nom}
                 {rendezVous.client_tel ? ` • ${rendezVous.client_tel}` : ""}
@@ -287,13 +292,13 @@ const RendezVousCard = ({
           )}
           {rendezVous.affaire_numero && (
             <div style={infoRowStyle}>
-              <span style={infoLabelStyle}>Dossier</span>
+              <span style={infoLabelStyle}>{t("Dossier")}</span>
               <span style={infoValueStyle}>{rendezVous.affaire_numero}</span>
             </div>
           )}
           {rendezVous.idtribunal && (
             <div style={infoRowStyle}>
-              <span style={infoLabelStyle}>Tribunal</span>
+              <span style={infoLabelStyle}>{t("Tribunal")}</span>
               <span style={infoValueStyle}>
                 {rendezVous.tribunal_nom || rendezVous.idtribunal.nomtribunal}
               </span>
@@ -301,30 +306,30 @@ const RendezVousCard = ({
           )}
           {rendezVous.description && (
             <div style={descriptionStyle}>
-              <span style={infoLabelStyle}>Description</span>
+              <span style={infoLabelStyle}>{t("Description")}</span>
               <p style={descriptionTextStyle}>{rendezVous.description}</p>
             </div>
           )}
           {rendezVous.remarques && (
             <div style={descriptionStyle}>
-              <span style={infoLabelStyle}>Remarques</span>
+              <span style={infoLabelStyle}>{t("Remarques")}</span>
               <p style={descriptionTextStyle}>{rendezVous.remarques}</p>
             </div>
           )}
           <div style={footerStyle}>
             <div style={notificationsStyle}>
               {rendezVous.rappel_24h && (
-                <span style={notificationBadgeStyle}>Rappel 24h</span>
+                <span style={notificationBadgeStyle}>{t("Rappel 24h avant")}</span>
               )}
               {rendezVous.rappel_1h && (
-                <span style={notificationBadgeStyle}>Rappel 1h</span>
+                <span style={notificationBadgeStyle}>{t("Rappel 1h avant")}</span>
               )}
             </div>
             <div style={dateCreationStyle}>
               {(() => {
                 const d = parseDate(rendezVous.date_creation);
                 return d
-                  ? `Créé le ${d.toLocaleDateString("fr-FR")} à ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+                  ? `${t("Créé le")} ${d.toLocaleDateString(isArabic ? "ar-EG" : "fr-FR")} ${t("à")} ${d.toLocaleTimeString(isArabic ? "ar-EG" : "fr-FR", { hour: "2-digit", minute: "2-digit" })}`
                   : "";
               })()}
             </div>
