@@ -145,3 +145,8 @@ urlpatterns += [
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
+
+from django.http import JsonResponse
+from django.urls import path
+def health(_): return JsonResponse({"ok": True})
+urlpatterns = [ path("health/", health) ] + urlpatterns
