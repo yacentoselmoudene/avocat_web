@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 .env
 avocat-dc133-0a92dc1a0f9e.json
+
+# Fichiers compilés Python
+__pycache__/
+*.pyc
+
+logs/django.log

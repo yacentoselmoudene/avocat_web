@@ -135,7 +135,7 @@ class Affairetribunal(models.Model):
     datejugement = models.DateField(db_column='dateJugement', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'affairetribunal'
         unique_together = (('idaffaire', 'idtribunal'),)
 
@@ -171,7 +171,7 @@ class Audience(models.Model):
     )
     lieu = models.CharField(max_length=255, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
-    remarques = models.TextField(db_collation='latin1_swedish_ci', blank=True, null=True)
+    remarques = models.TextField(db_collation='utf8mb4_unicode_ci', blank=True, null=True)
     rappel_24h = models.BooleanField(default=True)
     rappel_1h = models.BooleanField(default=False)
     date_creation = models.DateTimeField(auto_now_add=True, null=True)
@@ -184,38 +184,27 @@ class Audience(models.Model):
         db_table = 'audience'
 
 
-
-
-
-
 class Avocat(models.Model):
-    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    nomavocat_fr = models.CharField(db_column='nomAvocat_fr', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    nomavocat_ar = models.CharField(db_column='nomAvocat_ar', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    specialisation = models.CharField(max_length=255, db_collation='latin1_swedish_ci', blank=True, null=True)
+    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    nomavocat_fr = models.CharField(db_column='nomAvocat_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    nomavocat_ar = models.CharField(db_column='nomAvocat_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    specialisation = models.CharField(max_length=255, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'avocat'
-
-
-
 
 class Client(models.Model):
     idclient = models.AutoField(db_column='idClient', primary_key=True)
-    nomclient_fr = models.CharField(db_column='nomClient_fr', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    nomclient_ar = models.CharField(db_column='nomClient_ar', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
+    nomclient_fr = models.CharField(db_column='nomClient_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    nomclient_ar = models.CharField(db_column='nomClient_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     adresse1_fr = models.CharField(db_column='adresse1_fr', max_length=255, blank=True, null=True)
     adresse1_ar = models.CharField(db_column='adresse1_ar', max_length=255, blank=True, null=True)
     prenomclient = models.CharField(db_column='prenomClient', max_length=255, blank=True, null=True)
     adresse2_fr = models.CharField(db_column='adresse2_fr', max_length=255, blank=True, null=True)
     adresse2_ar = models.CharField(db_column='adresse2_ar', max_length=255, blank=True, null=True)
     numtel1 = models.CharField(db_column='numTel1', max_length=20, blank=True, null=True)
-    numtel1_fr = models.CharField(db_column='numTel1_fr', max_length=20, blank=True, null=True)
-    numtel1_ar = models.CharField(db_column='numTel1_ar', max_length=20, blank=True, null=True)
     numtel2 = models.CharField(db_column='numTel2', max_length=20, blank=True, null=True)
-    numtel2_fr = models.CharField(db_column='numTel2_fr', max_length=20, blank=True, null=True)
-    numtel2_ar = models.CharField(db_column='numTel2_ar', max_length=20, blank=True, null=True)
     email = models.EmailField(db_column='email', max_length=255, blank=True, null=True)
     idtypeclient = models.ForeignKey('TypeClient', models.DO_NOTHING, db_column='idTypeClient', blank=True, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True,db_column='user_id')  # pour lier au User
@@ -310,43 +299,43 @@ class Etapejudiciaire(models.Model):
 
 
 class Expert(models.Model):
-    idexpert = models.CharField(db_column='idExpert', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    nomexpert_fr = models.CharField(db_column='nomExpert_fr', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    nomexpert_ar = models.CharField(db_column='nomExpert_ar', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    specialisationexpert = models.CharField(db_column='specialisationExpert', max_length=255, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    telephoneexpert = models.CharField(db_column='telephoneExpert', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)  # Field name made lowercase.
+    idexpert = models.CharField(db_column='idExpert', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    nomexpert_fr = models.CharField(db_column='nomExpert_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    nomexpert_ar = models.CharField(db_column='nomExpert_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    specialisationexpert = models.CharField(db_column='specialisationExpert', max_length=255, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    telephoneexpert = models.CharField(db_column='telephoneExpert', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'expert'
 
 
 class Facture(models.Model):
-    idfacture = models.CharField(db_column='idFacture', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    idfacture = models.CharField(db_column='idFacture', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     montantfacture = models.FloatField(db_column='montantFacture')  # Field name made lowercase.
     datefacture = models.DateField(db_column='dateFacture')  # Field name made lowercase.
     idclient = models.ForeignKey(Client, models.DO_NOTHING, db_column='idClient', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'facture'
 
 
 class Huissier(models.Model):
-    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    nomhuissier_fr = models.CharField(db_column='nomHuissier_fr', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    nomhuissier_ar = models.CharField(db_column='nomHuissier_ar', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    adressehuissier_fr = models.TextField(db_column='adresseHuissier_fr', db_collation='latin1_swedish_ci', blank=True, null=True)
-    adressehuissier_ar = models.TextField(db_column='adresseHuissier_ar', db_collation='latin1_swedish_ci', blank=True, null=True)
-    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)  # Field name made lowercase.
+    idhuissier = models.CharField(db_column='idHuissier', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    nomhuissier_fr = models.CharField(db_column='nomHuissier_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    nomhuissier_ar = models.CharField(db_column='nomHuissier_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    adressehuissier_fr = models.TextField(db_column='adresseHuissier_fr', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    adressehuissier_ar = models.TextField(db_column='adresseHuissier_ar', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    telephonehuissier = models.CharField(db_column='telephoneHuissier', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'huissier'
 
 
 class Paiementhonoraires(models.Model):
-    idpaiement = models.CharField(db_column='idPaiement', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    idpaiement = models.CharField(db_column='idPaiement', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     idcontrat = models.ForeignKey(Contrat, models.DO_NOTHING, db_column='idContrat', blank=True, null=True)  # Field name made lowercase.
     idetape = models.ForeignKey(Etapejudiciaire, models.CASCADE, db_column='idEtape', blank=True, null=True)  # Field name made lowercase.
     pourcentagepaiement = models.FloatField(db_column='pourcentagePaiement')  # Field name made lowercase.
@@ -354,7 +343,7 @@ class Paiementhonoraires(models.Model):
     datepaiement = models.DateField(db_column='datePaiement')  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'paiementhonoraires'
 
 
@@ -366,7 +355,7 @@ class Participationexpertetape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationexpertetape'
         unique_together = (('idetape', 'idexpert'),)
 
@@ -379,7 +368,7 @@ class Participationhuissieretape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationhuissieretape'
         unique_together = (('idetape', 'idhuissier'),)
 
@@ -392,7 +381,7 @@ class Participationtemoinetape(models.Model):
     idtypeintervention = models.ForeignKey('TypeIntervention', models.DO_NOTHING, db_column='idTypeIntervention', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'participationtemoinetape'
         unique_together = (('idetape', 'idtemoin'),)
 
@@ -400,74 +389,74 @@ class Participationtemoinetape(models.Model):
 class StatutAffaire(models.Model):
     idstatutaffaire = models.AutoField(db_column='idStatutAffaire', primary_key=True)  # Field name made lowercase.
     idaffaire = models.ForeignKey(Affairejudiciaire, models.DO_NOTHING, db_column='idAffaire')  # Field name made lowercase.
-    libellestatutaffaire = models.CharField(db_column='libelleStatutAffaire', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libellestatutaffaire = models.CharField(db_column='libelleStatutAffaire', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     datedebut = models.DateField(db_column='dateDebut')  # Field name made lowercase.
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_affaire'
 
 
 class StatutAffairetribunal(models.Model):
     affairetribunal = models.ForeignKey(Affairetribunal, on_delete=models.CASCADE,related_name='statuts_affairetribunal')
     idstatutaffairetribunal = models.AutoField(db_column='idStatutAffaireTribunal', primary_key=True)  # Field name made lowercase.
-    libellestatutaffairetribunal = models.CharField(db_column='libelleStatutAffaireTribunal', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libellestatutaffairetribunal = models.CharField(db_column='libelleStatutAffaireTribunal', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     datedebut = models.DateField(db_column='dateDebut')  # Field name made lowercase.
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_affairetribunal'
 
 
 class StatutAudience(models.Model):
     idstatutaudience = models.AutoField(db_column='idStatutAudience', primary_key=True)  # Field name made lowercase.
     idaudience = models.ForeignKey(Audience, models.CASCADE, db_column='idAudience')  # Field name made lowercase.
-    libellestatutaudience = models.CharField(db_column='libelleStatutAudience', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libellestatutaudience = models.CharField(db_column='libelleStatutAudience', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     datedebut = models.DateField(db_column='dateDebut')  # Field name made lowercase.
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_audience'
 
 
 class StatutEtape(models.Model):
     idstatutetape = models.AutoField(db_column='idStatutEtape', primary_key=True)  # Field name made lowercase.
     idetape = models.ForeignKey(Etapejudiciaire, models.CASCADE, db_column='idEtape')  # Field name made lowercase.
-    libellestatutetape = models.CharField(db_column='libelleStatutEtape', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libellestatutetape = models.CharField(db_column='libelleStatutEtape', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     datedebut = models.DateField(db_column='dateDebut')  # Field name made lowercase.
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_etape'
 
 
 class StatutFacture(models.Model):
     idstatutfacture = models.AutoField(db_column='idStatutFacture', primary_key=True)  # Field name made lowercase.
     idfacture = models.ForeignKey(Facture, models.DO_NOTHING, db_column='idFacture')  # Field name made lowercase.
-    libellestatutfacture = models.CharField(db_column='libelleStatutFacture', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libellestatutfacture = models.CharField(db_column='libelleStatutFacture', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
     datedebut = models.DateField(db_column='dateDebut')  # Field name made lowercase.
     datefin = models.DateField(db_column='dateFin', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'statut_facture'
 
 
 class Temoin(models.Model):
-    idtemoin = models.CharField(db_column='idTemoin', primary_key=True, max_length=50, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    nomtemoin_fr = models.CharField(db_column='nomTemoin_fr', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    nomtemoin_ar = models.CharField(db_column='nomTemoin_ar', max_length=255, db_collation='latin1_swedish_ci', null=True, blank=True)
-    adressetemoin_fr = models.TextField(db_column='adresseTemoin_fr', db_collation='latin1_swedish_ci', blank=True, null=True)
-    adressetemoin_ar = models.TextField(db_column='adresseTemoin_ar', db_collation='latin1_swedish_ci', blank=True, null=True)
-    roletemoin = models.CharField(db_column='roleTemoin', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
-    telephonetemoin = models.CharField(db_column='telephoneTemoin', max_length=20, db_collation='latin1_swedish_ci', blank=True, null=True)  # Field name made lowercase.
+    idtemoin = models.CharField(db_column='idTemoin', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    nomtemoin_fr = models.CharField(db_column='nomTemoin_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    nomtemoin_ar = models.CharField(db_column='nomTemoin_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    adressetemoin_fr = models.TextField(db_column='adresseTemoin_fr', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    adressetemoin_ar = models.TextField(db_column='adresseTemoin_ar', db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    roletemoin = models.CharField(db_column='roleTemoin', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    telephonetemoin = models.CharField(db_column='telephoneTemoin', max_length=20, db_collation='utf8mb4_unicode_ci', blank=True, null=True)  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'temoin'
 
 
@@ -527,54 +516,54 @@ class Tribunal(models.Model):
 
 class TypeAffaire(models.Model):
     idtypeaffaire = models.AutoField(db_column='idTypeAffaire', primary_key=True)  # Field name made lowercase.
-    libelletypeaffaire_fr = models.CharField(db_column='libelleTypeAffaire_fr', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
-    libelletypeaffaire_ar = models.CharField(db_column='libelleTypeAffaire_ar', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
+    libelletypeaffaire_fr = models.CharField(db_column='libelleTypeAffaire_fr', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    libelletypeaffaire_ar = models.CharField(db_column='libelleTypeAffaire_ar', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_affaire'
 
 
 class TypeClient(models.Model):
     idtypeclient = models.AutoField(db_column='idTypeClient', primary_key=True)  # Field name made lowercase.
-    libelletypeclient_fr = models.CharField(db_column='libelleTypeClient_fr', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
-    libelletypeclient_ar = models.CharField(db_column='libelleTypeClient_ar', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
+    libelletypeclient_fr = models.CharField(db_column='libelleTypeClient_fr', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    libelletypeclient_ar = models.CharField(db_column='libelleTypeClient_ar', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
 
     def __str__(self):
         return self.libelletypeclient_fr or self.libelletypeclient_ar or ''
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_client'
 
 
 
 class TypeContrat(models.Model):
     idtypecontrat = models.AutoField(db_column='idTypeContrat', primary_key=True)  # Field name made lowercase.
-    libelletypecontrat_fr = models.CharField(db_column='libelleTypeContrat_fr', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
-    libelletypecontrat_ar = models.CharField(db_column='libelleTypeContrat_ar', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
+    libelletypecontrat_fr = models.CharField(db_column='libelleTypeContrat_fr', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    libelletypecontrat_ar = models.CharField(db_column='libelleTypeContrat_ar', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_contrat'
 
 
 class TypeEtape(models.Model):
     idtypeetape = models.AutoField(db_column='idTypeEtape', primary_key=True)  # Field name made lowercase.
-    libelletypeetape = models.CharField(db_column='libelleTypeEtape', max_length=100, db_collation='latin1_swedish_ci')  # Field name made lowercase.
+    libelletypeetape = models.CharField(db_column='libelleTypeEtape', max_length=100, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_etape'
 
 
 class TypeIntervention(models.Model):
     idtypeintervention = models.AutoField(db_column='idTypeIntervention', primary_key=True)  # Field name made lowercase.
-    libelletypeintervention_fr = models.CharField(db_column='libelleTypeIntervention_fr', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
-    libelletypeintervention_ar = models.CharField(db_column='libelleTypeIntervention_ar', max_length=100, db_collation='latin1_swedish_ci', null=True, blank=True)
+    libelletypeintervention_fr = models.CharField(db_column='libelleTypeIntervention_fr', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    libelletypeintervention_ar = models.CharField(db_column='libelleTypeIntervention_ar', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'type_intervention'
 
 
