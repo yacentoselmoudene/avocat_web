@@ -449,8 +449,8 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                     statut = getattr(prochaine_audience_obj, 'statut', None)
                     description = getattr(prochaine_audience_obj, 'description', None)
 
-                    tribunal_nom = prochaine_audience_obj.idtribunal.nomtribunal if prochaine_audience_obj.idtribunal else None
-                    tribunal_adresse = prochaine_audience_obj.idtribunal.adressetribunal if prochaine_audience_obj.idtribunal else None
+                    tribunal_nom = (prochaine_audience_obj.idtribunal.nomtribunal_fr or prochaine_audience_obj.idtribunal.nomtribunal_ar or '') if prochaine_audience_obj.idtribunal else None
+                    tribunal_adresse = (prochaine_audience_obj.idtribunal.adressetribunal_fr or prochaine_audience_obj.idtribunal.adressetribunal_ar or '') if prochaine_audience_obj.idtribunal else None
 
                     # Fallback lieu si non renseigné: composer depuis tribunal
                     if (lieu or '').strip() == '' and (tribunal_nom or tribunal_adresse):
@@ -728,7 +728,7 @@ class CreateClientView(APIView):
                     'client': {
                         'idclient': client.idclient,
                         'nomclient': client.nomclient,
-                        'type_client': type_client.libelletypeclient,
+                        'type_client': type_client.libelletypeclient_fr or type_client.libelletypeclient_ar or '',
                         'user_id': user.id
                     },
                     'contrat': contrat.idcontrat if contrat else None
@@ -1015,12 +1015,12 @@ class ContratViewSet(viewsets.ModelViewSet):
         return queryset
     
     def get_serializer_context(self):
-        """Ajouter le contexte de la requête pour générer les URLs"""
+        """ le contexte de la requête pour générer les URLs"""
         context = super().get_serializer_context()
         context['request'] = self.request
         return context
 
-# ViewSets pour la gestion du processus judiciaire et des étapes ---------------------------------
+# ViewSets pour la gestion du processus judiciaire et des étapes
 
 class EtapejudiciaireViewSet(viewsets.ModelViewSet):
     queryset = Etapejudiciaire.objects.all()
@@ -1144,7 +1144,7 @@ class TypeInterventionViewSet(viewsets.ModelViewSet):
 
 class TribunalViewSet(viewsets.ModelViewSet):
     queryset = Tribunal.objects.all()
-    print("queryset :" , queryset)
+    # print("queryset :" , queryset)
     serializer_class = TribunalSerializer
     
     def get_queryset(self):
@@ -1283,10 +1283,10 @@ class ClassificationAffaireView(APIView):
             cat = CategorieAffaire.objects.select_related('sous_type__type_principale').get(code=code)
             # classification complete
             classification = {
-                "type": cat.sous_type.type_principale.libelle,
-                "categorie": cat.sous_type.libelle,
-                "detail": cat.libelle,
-                "type_principale": cat.sous_type.type_principale.libelle  # Type de la première table
+                "type": cat.sous_type.type_principale.libelle_fr or cat.sous_type.type_principale.libelle_ar or '',
+                "categorie": cat.sous_type.libelle_fr or cat.sous_type.libelle_ar or '',
+                "detail": cat.libelle_fr or cat.libelle_ar or '',
+                "type_principale": cat.sous_type.type_principale.libelle_fr or cat.sous_type.type_principale.libelle_ar or ''  # Type de la première table
             }
             
             # sugg de tribunaux
@@ -1310,9 +1310,9 @@ class ClassificationAffaireView(APIView):
                 "suggestions": [
                     {
                         "code": s.code,
-                        "libelle": s.libelle,
-                        "categorie": s.sous_type.libelle,
-                        "type": s.sous_type.type_principale.libelle
+                        "libelle": s.libelle_fr or s.libelle_ar or '',
+                        "categorie": s.sous_type.libelle_fr or s.sous_type.libelle_ar or '',
+                        "type": s.sous_type.type_principale.libelle_fr or s.sous_type.type_principale.libelle_ar or ''
                     } for s in suggestions
                 ]
             }, status=status.HTTP_200_OK)
@@ -1541,7 +1541,7 @@ def tribunaux_appel(request):
         for tribunal in tribunaux:
             tribunaux_data.append({
                 'id': tribunal.idtribunal,
-                'nom': tribunal.nomtribunal,
+                'nom': tribunal.nomtribunal_fr or tribunal.nomtribunal_ar or '',
                 'ville': tribunal.ville,
                 'type': tribunal.idtypetribunal.libelletypetribunal
             })
@@ -1872,7 +1872,7 @@ def completer_etape(request, affaire_id, etape_id):
                 try:
                     type_avertissement = TypeAvertissement.objects.get(idtypeavertissement=type_avertissement_id)
                     etape.idtypeavertissement = type_avertissement
-                    print(f"✅ Type avertissement mis à jour: {type_avertissement.libelle}")
+                    print(f"✅ Type avertissement mis à jour: {type_avertissement.libelle_fr or type_avertissement.libelle_ar or ''}")
                 except TypeAvertissement.DoesNotExist:
                     print(f"⚠️ Type avertissement {type_avertissement_id} non trouvé")
             
@@ -1880,7 +1880,7 @@ def completer_etape(request, affaire_id, etape_id):
                 try:
                     type_demande = TypeDemande.objects.get(idtypedemande=type_demande_id)
                     etape.idtypedemande = type_demande
-                    print(f"✅ Type demande mis à jour: {type_demande.libelle}")
+                    print(f"✅ Type demande mis à jour: {type_demande.libelle_fr or type_demande.libelle_ar or ''}")
                 except TypeDemande.DoesNotExist:
                     print(f"⚠️ Type demande {type_demande_id} non trouvé")
             
@@ -1908,8 +1908,8 @@ def completer_etape(request, affaire_id, etape_id):
             # Déterminer si c'est une affaire pénale et le rôle du client
             is_affaire_penale = False
             try:
-                if affaire.idcategorieaffaire and hasattr(affaire.idcategorieaffaire, 'libellecategorie'):
-                    is_affaire_penale = affaire.idcategorieaffaire.libellecategorie.lower() in ['penal', 'pénal', 'penale', 'pénale']
+                if affaire.idcategorieaffaire and hasattr(affaire.idcategorieaffaire, 'libelle_fr'):
+                    is_affaire_penale = (affaire.idcategorieaffaire.libelle_fr or affaire.idcategorieaffaire.libelle_ar or '').lower() in ['penal', 'pénal', 'penale', 'pénale']
             except:
                 pass
             
@@ -2041,7 +2041,7 @@ def completer_etape(request, affaire_id, etape_id):
                 try:
                     type_avertissement = TypeAvertissement.objects.get(idtypeavertissement=type_avertissement_id)
                     etape_data['idtypeavertissement'] = type_avertissement
-                    print(f"Type avertissement ajouté: {type_avertissement.libelle}")
+                    print(f"Type avertissement ajouté: {type_avertissement.libelle_fr or type_avertissement.libelle_ar or ''}")
                 except TypeAvertissement.DoesNotExist:
                     print(f"Type avertissement {type_avertissement_id} non trouvé")
                     pass
@@ -2049,7 +2049,7 @@ def completer_etape(request, affaire_id, etape_id):
                 try:
                     type_demande = TypeDemande.objects.get(idtypedemande=type_demande_id)
                     etape_data['idtypedemande'] = type_demande
-                    print(f"Type demande ajouté: {type_demande.libelle}")
+                    print(f"Type demande ajouté: {type_demande.libelle_fr or type_demande.libelle_ar or ''}")
                 except TypeDemande.DoesNotExist:
                     print(f"Type demande {type_demande_id} non trouvé")
                     pass
@@ -2771,7 +2771,7 @@ def completer_etape(request, affaire_id, etape_id):
                     try:
                         tribunal_audience = Tribunal.objects.get(idtribunal=tribunal_audience_penale_id)
                         audience_penale_data['idtribunal'] = tribunal_audience
-                        print(f"✅ Tribunal audience trouvé: {tribunal_audience.nomtribunal}")
+                        print(f"✅ Tribunal audience trouvé: {tribunal_audience.nomtribunal_fr or tribunal_audience.nomtribunal_ar or ''}")
                     except Tribunal.DoesNotExist:
                         print(f"❌ Tribunal {tribunal_audience_penale_id} non trouvé!")
                         observations_audience_completes += f"Erreur: Tribunal {tribunal_audience_penale_id} non trouvé\n"
@@ -2912,7 +2912,7 @@ def completer_etape(request, affaire_id, etape_id):
                 
                 # Récupérer le tribunal
                 tribunal = Tribunal.objects.get(idtribunal=tribunal_id)
-                print(f"   - tribunal trouvé: {tribunal.nomtribunal}")
+                print(f"   - tribunal trouvé: {tribunal.nomtribunal_fr or tribunal.nomtribunal_ar or ''}")
                 
                 audience_data = {
                     'idaudience': audience_id,
@@ -2972,7 +2972,7 @@ def completer_etape(request, affaire_id, etape_id):
                         remarques=f"Audience penale - Presence: Plaignant({plaignant_present}), Accuse({accuse_present}), Avocat({avocat_present}), Ministere public({ministere_public_present})"
                     )
                     if audience:
-                        observations_completes += f"\n=== AUDIENCE PENALE ===\nTribunal: {audience.idtribunal.nomtribunal}\nDate: {date_audience_penale}\nHeure: {heure_audience_penale or 'Non spécifiée'}\n"
+                        observations_completes += f"\n=== AUDIENCE PENALE ===\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience_penale}\nHeure: {heure_audience_penale or 'Non spécifiée'}\n"
                 else:
                     print(f"🎯 Affaire non-pénale - Utilisation des données de convocation normale")
                     audience = creer_audience(
@@ -2983,7 +2983,7 @@ def completer_etape(request, affaire_id, etape_id):
                         remarques="Audience convocation"
                     )
                     if audience:
-                        observations_completes += f"\n=== AUDIENCE CONVOCATION ===\nTribunal: {audience.idtribunal.nomtribunal}\nDate: {date_audience}\nHeure: {heure_audience or 'Non spécifiée'}\n"
+                        observations_completes += f"\n=== AUDIENCE CONVOCATION ===\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience}\nHeure: {heure_audience or 'Non spécifiée'}\n"
             
             # Étape "جلسة المحاكمة" (Audience pénale)
             elif etape_libelle == "جلسة المحاكمة":
@@ -3005,7 +3005,7 @@ def completer_etape(request, affaire_id, etape_id):
                     remarques=f"Audience penale - Presence: Plaignant({plaignant_present}), Accuse({accuse_present}), Avocat({avocat_present}), Ministere public({ministere_public_present})"
                 )
                 if audience:
-                    observations_completes += f"\n=== AUDIENCE PENALE ===\nTribunal: {audience.idtribunal.nomtribunal}\nDate: {date_audience_penale}\nHeure: {heure_audience_penale or 'Non spécifiée'}\n"
+                    observations_completes += f"\n=== AUDIENCE PENALE ===\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience_penale}\nHeure: {heure_audience_penale or 'Non spécifiée'}\n"
             
             # Autres étapes - Créer une audience si des données sont fournies
             else:
@@ -3022,7 +3022,7 @@ def completer_etape(request, affaire_id, etape_id):
                         remarques=f"Audience pour étape: {etape_libelle}"
                     )
                     if audience:
-                        observations_completes += f"\n=== AUDIENCE GÉNÉRIQUE ===\nÉtape: {etape_libelle}\nTribunal: {audience.idtribunal.nomtribunal}\nDate: {date_audience}\nHeure: {heure_audience or 'Non spécifiée'}\n"
+                        observations_completes += f"\n=== AUDIENCE GÉNÉRIQUE ===\nÉtape: {etape_libelle}\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience}\nHeure: {heure_audience or 'Non spécifiée'}\n"
                 else:
                     print(f"ℹ️ Aucune donnée d'audience fournie pour l'étape '{etape_libelle}'")
         else:
@@ -3201,7 +3201,7 @@ def types_avertissement(request):
         for type_avert in types:
             data.append({
                 'idTypeAvertissement': type_avert.idtypeavertissement,
-                'libelle': type_avert.libelle,
+                'libelle': type_avert.libelle_fr or type_avert.libelle_ar or '',
                 'libelle_ar': type_avert.libelle_ar,
                 'delai_legal': type_avert.delai_legal,
                 'obligatoire': type_avert.obligatoire,
@@ -3222,7 +3222,7 @@ def types_demande(request):
         for type_demande in types:
             data.append({
                 'idTypeDemande': type_demande.idtypedemande,
-                'libelle': type_demande.libelle,
+                'libelle': type_demande.libelle_fr or type_demande.libelle_ar or '',
                 'libelle_ar': type_demande.libelle_ar,
                 'delai_legal': type_demande.delai_legal,
                 'categorie': type_demande.categorie,

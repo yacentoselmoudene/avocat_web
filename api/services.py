@@ -175,9 +175,9 @@ class ClassificationAffaireService:
             # join auto
             cat = CategorieAffaire.objects.select_related('sous_type__type_principale').get(code=code)
             return {
-                "type": cat.sous_type.type_principale.libelle,
-                "categorie": cat.sous_type.libelle,
-                "detail": cat.libelle
+                "type": cat.sous_type.type_principale.libelle_fr or cat.sous_type.type_principale.libelle_ar or '',
+                "categorie": cat.sous_type.libelle_fr or cat.sous_type.libelle_ar or '',
+                "detail": cat.libelle_fr or cat.libelle_ar or ''
             }
         except CategorieAffaire.DoesNotExist:
             return None
@@ -189,9 +189,9 @@ class ClassificationAffaireService:
         return [
             {
                 "code": s.code,
-                "libelle": s.libelle,
-                "categorie": s.sous_type.libelle,
-                "type": s.sous_type.type_principale.libelle
+                "libelle": s.libelle_fr or s.libelle_ar or '',
+                "categorie": s.sous_type.libelle_fr or s.sous_type.libelle_ar or '',
+                "type": s.sous_type.type_principale.libelle_fr or s.sous_type.type_principale.libelle_ar or ''
             } for s in suggestions
         ]
 
@@ -208,10 +208,10 @@ class TribunalSuggestionService:
             type_affaire = TypeAffairePrincipale.objects.get(code=type_affaire_code)
             
             # Logique de suggestion selon le type d'affaire
-            tribunaux = cls._get_tribunaux_by_category(type_affaire.libelle)
+            tribunaux = cls._get_tribunaux_by_category(type_affaire.libelle_fr or type_affaire.libelle_ar or '')
             
             return {
-                "type_affaire": type_affaire.libelle,
+                "type_affaire": type_affaire.libelle_fr or type_affaire.libelle_ar or '',
                 "tribunaux": tribunaux
             }
         except TypeAffairePrincipale.DoesNotExist:
@@ -305,11 +305,11 @@ class TribunalSuggestionService:
                 for tribunal in tribunaux_du_type:
                     tribunaux.append({
                         'id': tribunal.idtribunal,
-                        'nom': tribunal.nomtribunal,
-                        'ville': tribunal.villetribunal,
-                        'type': tribunal.idtypetribunal.libelletypetribunal,
+                        'nom': tribunal.nomtribunal_fr or tribunal.nomtribunal_ar or '',
+                        'ville': tribunal.villetribunal_fr or tribunal.villetribunal_ar or '',
+                        'type': tribunal.idtypetribunal.libelletypetribunal_fr or tribunal.idtypetribunal.libelletypetribunal_ar or '',
                         'niveau': tribunal.idtypetribunal.niveau,
-                        'adresse': tribunal.adressetribunal,
+                        'adresse': tribunal.adressetribunal_fr or tribunal.adressetribunal_ar or '',
                         'telephone': tribunal.telephonetribunal
                     })
             except TypeTribunal.DoesNotExist:
@@ -330,11 +330,11 @@ class TribunalSuggestionService:
             for tribunal in tribunaux_appel:
                 tribunaux.append({
                     'id': tribunal.idtribunal,
-                    'nom': tribunal.nomtribunal,
-                    'ville': tribunal.villetribunal,
-                    'type': tribunal.idtypetribunal.libelletypetribunal,
+                    'nom': tribunal.nomtribunal_fr or tribunal.nomtribunal_ar or '',
+                    'ville': tribunal.villetribunal_fr or tribunal.villetribunal_ar or '',
+                    'type': tribunal.idtypetribunal.libelletypetribunal_fr or tribunal.idtypetribunal.libelletypetribunal_ar or '',
                     'niveau': tribunal.idtypetribunal.niveau,
-                    'adresse': tribunal.adressetribunal,
+                    'adresse': tribunal.adressetribunal_fr or tribunal.adressetribunal_ar or '',
                     'telephone': tribunal.telephonetribunal
                 })
         except TypeTribunal.DoesNotExist:
@@ -803,4 +803,758 @@ def synchroniser_statut_phase(affaire):
         statut = affaire.idstatutaffaire.libellestatutaffaire
         if statut in mapping_statut_phase:
             affaire.phase_processus = mapping_statut_phase[statut]
+            affaire.save()
+
+
+
+
+
+# Fonction pour obtenir les étapes de la phase procédure selon le rôle du client
+
+def get_etapes_phase_procedure(affaire):
+
+    role_client = get_role_client_from_fonction(affaire)
+
+    # Classification de l'affaire
+
+    classification = ClassificationAffaireService.get_classification_by_code(affaire.code_dossier) if affaire.code_dossier else None
+
+    
+
+    # DEBUG: Afficher la classification
+
+    print(f"🔍 DEBUG get_etapes_phase_procedure:")
+
+    print(f"   Code dossier: {affaire.code_dossier}")
+
+    print(f"   Classification: {classification}")
+
+    print(f"   Rôle client: {role_client}")
+
+    
+
+    # Détection pénale par code dossier
+
+    is_penal_by_code = False
+
+    if affaire.code_dossier:
+
+        code = affaire.code_dossier.upper()
+
+        # Codes pénaux: 2, 3, 4, PEN, PENAL
+
+        if (code.startswith('2') or code.startswith('3') or code.startswith('4') or 
+
+            'PEN' in code or 'PENAL' in code):
+
+            is_penal_by_code = True
+
+            print(f"   ✅ Détecté comme pénal par code: {code}")
+
+    
+
+    # Gestion spéciale pour les affaires pénales
+
+    if (classification and classification.get('type') == 'PENAL') or is_penal_by_code:
+
+        if role_client == "demandeur":
+
+            return [
+
+                ("التحقيق الأولي", 60),
+
+                ("قرار النيابة العامة", 30),
+
+                ("جلسة المحاكمة", 45)
+
+            ]
+
+        else:  # opposant
+
+            return [
+
+                ("جلسة ودفاع", 60)
+
+            ]
+
+    
+
+    # Logique normale pour les autres types d'affaires
+
+    if role_client == "demandeur":
+
+        return [
+
+            ("أول جلسة", 60),
+
+            ("تبليغ الاستدعاء", 75),
+
+            ("جلسات", 90),
+
+            ("مداولة", 105),
+
+            ("حكم", 120)
+
+        ]
+
+    else:  # opposant
+
+        return [
+
+            ("تقديم تمثيل", 60),
+
+            ("رد على المقال", 75),
+
+            ("مداولة", 90),
+
+            ("جلسات", 105),
+
+            ("حكم", 120)
+
+        ]
+
+
+
+
+
+# Fonction pour déterminer automatiquement le rôle du client selon sa fonction
+
+def get_role_client_from_fonction(affaire):
+
+    if not affaire.idfonctionclient:
+
+        return 'demandeur'  # Par défaut
+
+    
+
+    try:
+
+        fonction = affaire.idfonctionclient.libellefonction.lower()
+
+        
+
+        # Mapping des fonctions vers les rôles
+
+        if 'demandeur' in fonction or 'plaignant' in fonction or 'requérant' in fonction:
+
+            return 'demandeur'
+
+        elif 'opposant' in fonction or 'défendeur' in fonction or 'accusé' in fonction or 'mis en cause' in fonction:
+
+            return 'opposant'
+
+        else:
+
+            return 'demandeur'  # Par défaut
+
+    except AttributeError:
+
+        return 'demandeur'  # Par défaut si erreur
+
+
+
+# Fonction pour déterminer l'étape actuelle selon la phase du processus
+
+def get_etape_actuelle_par_phase(affaire):
+
+
+
+    if hasattr(affaire, 'etape_actuelle') and affaire.etape_actuelle:
+
+        return affaire.etape_actuelle
+
+    
+
+
+
+    phase = getattr(affaire, 'phase_processus', 'INITIALE')
+
+    
+
+    if phase == 'INITIALE':
+
+        return get_etape_actuelle_initiale(affaire)
+
+    elif phase == 'PROCEDURE':
+
+        return get_etape_actuelle_procedure(affaire)
+
+    elif phase == 'APPEL':
+
+        return get_etape_actuelle_appel(affaire)
+
+    elif phase == 'EXECUTION':
+
+        return get_etape_actuelle_execution(affaire)
+
+    else:
+
+        return None
+
+
+
+
+
+# Fonction pour déterminer l'étape actuelle en phase initiale
+
+def get_etape_actuelle_initiale(affaire):
+
+    etapes_phase = get_etapes_phase_initiale(affaire)
+
+    role_client = get_role_client_from_fonction(affaire)
+
+
+
+    for i, etape_data in enumerate(etapes_phase):
+
+        libelle_etape = etape_data['libelle_ar']
+
+        
+
+        #  trouver une étape existante avec le bon type
+
+        etape = Etapejudiciaire.objects.filter(
+
+            idaffaire=affaire,
+
+            idtypeetape__libelletypeetape=libelle_etape
+
+        ).first()
+
+
+
+        if etape and not etape.statutetape_set.filter(
+
+                libellestatutetape='Terminee'
+
+        ).exists():
+
+            return etape
+
+        
+
+        # Si aucune étape n'existe, créer
+
+        if not etape:
+
+            # Chercher le type d'étape correspondant
+
+            from api.models import TypeEtape
+
+            type_etape = TypeEtape.objects.filter(
+
+                libelletypeetape=libelle_etape
+
+            ).first()
+
+            
+
+            if type_etape:
+
+                # Créer l'étape
+
+                from datetime import date
+
+                etape = Etapejudiciaire.objects.create(
+
+                    idetape=f"etape_{i}_{affaire.idaffaire}_{hash(libelle_etape)}",
+
+                    datedebut=date.today(),
+
+                    idaffaire=affaire,
+
+                    idtypeetape=type_etape,
+
+                    delai_legal=etape_data.get('delai', 30),
+
+                    ordre_etape=i,
+
+                    etape_obligatoire=etape_data.get('obligatoire', True)
+
+                )
+
+                print(f"✅ Étape créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+
+                return etape
+
+            else:
+
+                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+
+
+
+    return None
+
+
+
+
+
+# Fonction pour déterminer l'étape actuelle en phase procédure
+
+def get_etape_actuelle_procedure(affaire):
+
+    etapes_phase = get_etapes_phase_procedure(affaire)
+
+    role_client = get_role_client_from_fonction(affaire)
+
+
+
+    for i, (libelle_etape, delai) in enumerate(etapes_phase):
+
+        etape = Etapejudiciaire.objects.filter(
+
+            idaffaire=affaire,
+
+            idtypeetape__libelletypeetape=libelle_etape
+
+        ).first()
+
+
+
+        if etape and not etape.statutetape_set.filter(
+
+                libellestatutetape='Terminee'
+
+        ).exists():
+
+            return etape
+
+        
+
+        # Si aucune étape n'existe, créer
+
+        if not etape:
+
+            # Chercher le type d'étape correspondant
+
+            from api.models import TypeEtape
+
+            type_etape = TypeEtape.objects.filter(
+
+                libelletypeetape=libelle_etape
+
+            ).first()
+
+            
+
+            if type_etape:
+
+                # Créer l'étape
+
+                from datetime import date
+
+                etape = Etapejudiciaire.objects.create(
+
+                    idetape=f"etape_proc_{i}_{affaire.idaffaire}_{hash(libelle_etape)}",
+
+                    datedebut=date.today(),
+
+                    idaffaire=affaire,
+
+                    idtypeetape=type_etape,
+
+                    delai_legal=delai,
+
+                    ordre_etape=i,
+
+                    etape_obligatoire=True
+
+                )
+
+                print(f"✅ Étape procédure créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+
+                return etape
+
+            else:
+
+                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+
+
+
+    return None
+
+
+
+
+
+# Fonction pour déterminer l'étape actuelle en phase appel
+
+def get_etape_actuelle_appel(affaire):
+
+    return None
+
+
+
+
+
+# Fonction pour déterminer l'étape actuelle en phase exécution
+
+def get_etape_actuelle_execution(affaire):
+
+
+
+    role_client = get_role_client_from_fonction(affaire)
+
+    
+
+    # Classification de l'affaire
+
+    classification = ClassificationAffaireService.get_classification_by_code(affaire.code_dossier) if affaire.code_dossier else None
+
+    
+
+    # DEBUG: Afficher la classification
+
+    print(f"🔍 DEBUG get_etape_actuelle_execution:")
+
+    print(f"   Code dossier: {affaire.code_dossier}")
+
+    print(f"   Classification: {classification}")
+
+    print(f"   Rôle client: {role_client}")
+
+    
+
+    # Détection pénale par code dossier
+
+    is_penal_by_code = False
+
+    if affaire.code_dossier:
+
+        code = affaire.code_dossier.upper()
+
+        # Codes pénaux: 2, 3, 4, PEN, PENAL
+
+        if (code.startswith('2') or code.startswith('3') or code.startswith('4') or 
+
+            'PEN' in code or 'PENAL' in code):
+
+            is_penal_by_code = True
+
+            print(f"   ✅ Détecté comme pénal par code: {code}")
+
+    
+
+    if (classification and classification.get('type') == 'PENAL') or is_penal_by_code:
+
+        if role_client == "demandeur":
+
+            libelle_etape = "تنفيذ القرار"  # Exécution de la décision
+
+        else:  # opposant
+
+            libelle_etape = "تنفيذ الحكم"   # Exécution du jugement
+
+        
+
+        # Chercher l'étape existante
+
+        etape = Etapejudiciaire.objects.filter(
+
+            idaffaire=affaire,
+
+            idtypeetape__libelletypeetape=libelle_etape
+
+        ).first()
+
+
+
+        if etape and not etape.statutetape_set.filter(
+
+                libellestatutetape='Terminee'
+
+        ).exists():
+
+            return etape
+
+        
+
+        # Si aucune étape n'existe créer
+
+        if not etape:
+
+            from api.models import TypeEtape
+
+            type_etape = TypeEtape.objects.filter(
+
+                libelletypeetape=libelle_etape
+
+            ).first()
+
+            
+
+            if type_etape:
+
+                from datetime import date
+
+                etape = Etapejudiciaire.objects.create(
+
+                    idetape=f"etape_exec_{affaire.idaffaire}_{hash(libelle_etape)}",
+
+                    datedebut=date.today(),
+
+                    idaffaire=affaire,
+
+                    idtypeetape=type_etape,
+
+                    delai_legal=30,
+
+                    ordre_etape=0,
+
+                    etape_obligatoire=True
+
+                )
+
+                print(f"✅ Étape exécution créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+
+                return etape
+
+            else:
+
+                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+
+
+
+    return None
+
+
+
+
+
+# Fonction pour avancer automatiquement dans le workflow des étapes
+
+def avancer_etape(affaire):
+
+    if affaire.etape_actuelle:
+
+        # Terminer l'étape actuelle
+
+        etape_actuelle = affaire.etape_actuelle
+
+        etape_actuelle.date_fin_effective = date.today()
+
+        etape_actuelle.save()
+
+
+
+        # Créer le statut terminé
+
+        StatutEtape.objects.create(
+
+            idetape=etape_actuelle,
+
+            libellestatutetape='Terminee',
+
+            datedebut=date.today()
+
+        )
+
+
+
+        # Passer à l'étape suivante
+
+        etape_suivante = Etapejudiciaire.objects.filter(
+
+            idaffaire=affaire,
+
+            ordre_etape__gt=etape_actuelle.ordre_etape
+
+        ).order_by('ordre_etape').first()
+
+
+
+        if etape_suivante:
+
+            affaire.etape_actuelle = etape_suivante
+
+            affaire.save()
+
+
+
+            # Créer le statut en cours
+
+            StatutEtape.objects.create(
+
+                idetape=etape_suivante,
+
+                libellestatutetape='En cours',
+
+                datedebut=date.today()
+
+            )
+
+
+
+            return etape_suivante
+
+        else:
+
+            # Toutes les étapes sont terminées
+
+            affaire.phase_processus = 'EXECUTION'
+
+            affaire.save()
+
+            return None
+
+
+
+
+
+# Fonction pour terminer l'étape actuelle et passer à la suivante
+
+def terminer_etape(affaire):
+
+    if affaire.etape_actuelle:
+
+        # Marquer l'étape actuelle comme terminée
+
+        statut = StatutEtape.objects.create(
+
+            idetape=affaire.etape_actuelle,
+
+            libellestatutetape='Terminee',
+
+            datedebut=date.today()
+
+        )
+
+
+
+        # Passer à l'étape suivante
+
+        return avancer_etape(affaire)
+
+    return None
+
+
+
+
+
+# Fonction pour obtenir la progression complète de la phase actuelle
+
+def get_progression_phase(affaire):
+
+    if affaire.phase_processus == 'INITIALE':
+
+        etapes_phase = get_etapes_phase_initiale(affaire)
+
+    elif affaire.phase_processus == 'PROCEDURE':
+
+        etapes_phase = get_etapes_phase_procedure(affaire)
+
+    else:
+
+        return []
+
+
+
+    progression = []
+
+    for etape_data in etapes_phase:
+
+        # Gérer les deux formats : dictionnaire (phase initiale) et tuple (phase procédure)
+
+        if isinstance(etape_data, dict):
+
+            # Phase initiale : format dictionnaire
+
+            libelle_etape = etape_data['libelle_ar']
+
+            delai = etape_data['delai']
+
+        elif isinstance(etape_data, tuple):
+
+            # Phase procédure : format tuple (libelle, delai)
+
+            libelle_etape = etape_data[0]
+
+            delai = etape_data[1]
+
+        else:
+
+            continue  # Ignorer les formats non reconnus
+
+            
+
+        etape = Etapejudiciaire.objects.filter(
+
+            idaffaire=affaire,
+
+            idtypeetape__libelletypeetape=libelle_etape
+
+        ).first()
+
+
+
+        if etape:
+
+            statut_actuel = etape.statutetape_set.filter(
+
+                datefin__isnull=True
+
+            ).first()
+
+
+
+            etape_actuelle = get_etape_actuelle_par_phase(affaire)
+
+            progression.append({
+
+                'etape_id': etape.idetape,
+
+                'libelle': libelle_etape,
+
+                'delai': delai,
+
+                'statut': statut_actuel.libellestatutetape if statut_actuel else 'En attente',
+
+                'terminee': statut_actuel and statut_actuel.libellestatutetape == 'Terminee',
+
+                'actuelle': etape_actuelle and etape.idetape == etape_actuelle.idetape
+
+            })
+
+
+
+    return progression
+
+
+
+
+
+# Fonction pour synchroniser le statut avec la phase du workflow
+
+def synchroniser_statut_phase(affaire):
+
+    mapping_statut_phase = {
+
+        'Enregistrée': 'INITIALE',
+
+        'En cours d\'instruction': 'INITIALE',
+
+        'En instance': 'PROCEDURE',
+
+        'Jugée': 'PROCEDURE',
+
+        'En appel': 'APPEL',
+
+        'En cassation': 'APPEL',
+
+        'Classée sans suite': 'EXECUTION',
+
+        'Suspendue': 'INITIALE'
+
+    }
+
+
+
+    if affaire.idstatutaffaire:
+
+        statut = affaire.idstatutaffaire.libellestatutaffaire
+
+        if statut in mapping_statut_phase:
+
+            affaire.phase_processus = mapping_statut_phase[statut]
+
             affaire.save()

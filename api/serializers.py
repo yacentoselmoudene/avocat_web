@@ -12,7 +12,7 @@ class ContratSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     nom_fichier = serializers.SerializerMethodField()
     client_id = serializers.IntegerField(source='idclient.idclient', read_only=True)
-    client_nom = serializers.CharField(source='idclient.nomclient', read_only=True, required=False, allow_null=True)
+    client_nom = serializers.CharField(source='idclient.nomclient_fr', read_only=True, required=False, allow_null=True)
     doc_type = serializers.SerializerMethodField()
     
     class Meta:
@@ -49,16 +49,16 @@ class ClientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = [
-            'idclient', 'username', 'nomclient', 'prenomclient', 'email',
-            'numtel1', 'numtel2', 'adresse1', 'adresse2',
+            'idclient', 'username', 'nomclient_fr', 'prenomclient', 'email',
+            'numtel1', 'numtel2', 'adresse1_fr', 'adresse2_fr',
             'type_client', 'contrat', 'preferred_language'
         ]
 
     def get_type_client(self, obj):
-        return obj.idtypeclient.libelletypeclient if obj.idtypeclient else None
+        return obj.idtypeclient.libelletypeclient_fr if obj.idtypeclient else None
 
     def get_contrat(self, obj):
-        if obj.idtypeclient and obj.idtypeclient.libelletypeclient.lower() == 'societe':
+        if obj.idtypeclient and (getattr(obj.idtypeclient, 'libelletypeclient_fr', '') or '').lower() == 'societe':
             contrat = Contrat.objects.filter(idclient=obj).first()
             print("DEBUG contrat trouvé:", contrat)
             return ContratSerializer(contrat).data if contrat else None
@@ -126,7 +126,7 @@ class AffairejudiciaireSerializer(serializers.ModelSerializer):
 
     def get_role_client_libelle(self, obj):
         if obj.idfonctionclient:
-            return obj.idfonctionclient.libellefonction
+            return obj.idfonctionclient.libellefonction_fr
         return "Non défini"
 
     def get_type_affaire_libelle(self, obj):
@@ -153,13 +153,13 @@ class AffairejudiciaireSerializer(serializers.ModelSerializer):
         
         # Priorité 2: Utiliser le type d'affaire enregistré
         if obj.idtypeaffaire:
-            return obj.idtypeaffaire.libelletypeaffaire
+            return obj.idtypeaffaire.libelletypeaffaire_fr
         
         return "Non défini"
 
     def get_client_nom(self, obj):
         if obj.idclient:
-            nom = obj.idclient.nomclient or ""
+            nom = obj.idclient.nomclient_fr or ""
             prenom = obj.idclient.prenomclient or ""
             
             # Éviter la duplication si nom et prénom sont identiques
@@ -332,6 +332,15 @@ class StatutAffairetribunalSerializer(serializers.ModelSerializer):
 
 # Serializer pour les types de clients
 class TypeClientSerializer(serializers.ModelSerializer):
+
+    libelletypeclient = serializers.SerializerMethodField()
+
+    def get_libelletypeclient(self, obj):
+        try:
+            return getattr(obj, 'libelletypeclient_fr', None) or getattr(obj, 'libelletypeclient_ar', None) or ''
+        except Exception:
+            return ''
+
     class Meta:
         model = TypeClient
         fields = '__all__'
@@ -374,7 +383,7 @@ class AudienceSerializer(serializers.ModelSerializer):
     client_id = serializers.IntegerField(source='idaffaire.idclient.idclient', read_only=True)
     client_nom = serializers.SerializerMethodField()
     client_tel = serializers.CharField(source='idaffaire.idclient.numtel1', read_only=True)
-    tribunal_nom = serializers.CharField(source='idtribunal.nomtribunal', read_only=True)
+    tribunal_nom = serializers.CharField(source='idtribunal.nomtribunal_fr', read_only=True)
 
     class Meta:
         model = Audience
@@ -402,7 +411,7 @@ class AudienceSerializer(serializers.ModelSerializer):
         try:
             client = getattr(getattr(obj, 'idaffaire', None), 'idclient', None)
             if client:
-                nom = getattr(client, 'nomclient', '') or ''
+                nom = getattr(client, 'nomclient_fr', '') or ''
                 prenom = getattr(client, 'prenomclient', '') or ''
                 return f"{nom} {prenom}".strip() or None
         except Exception:
@@ -478,7 +487,7 @@ class FichierSerializer(serializers.ModelSerializer):
     affaire_code_dossier = serializers.CharField(source='affaire.code_dossier', read_only=True, required=False, allow_null=True)
     affaire_annee_dossier = serializers.CharField(source='affaire.annee_dossier', read_only=True, required=False, allow_null=True)
     client_id = serializers.IntegerField(source='affaire.idclient.idclient', read_only=True, required=False)
-    client_nom = serializers.CharField(source='affaire.idclient.nomclient', read_only=True, required=False, allow_null=True)
+    client_nom = serializers.CharField(source='affaire.idclient.nomclient_fr', read_only=True, required=False, allow_null=True)
     doc_type = serializers.SerializerMethodField()
 
     class Meta:

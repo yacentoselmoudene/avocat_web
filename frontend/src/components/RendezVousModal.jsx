@@ -88,8 +88,8 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
         idaffaire: idAffaireValue,
         idtribunal: formData.lieu ? (tribunaux.find(t => t.nomtribunal === formData.lieu)?.idtribunal || null) : null,
         type_rendez_vous: formData.type_rendez_vous,
-        // Forcer le titre enregistré = libellé du type choisi
-        titre: getTypeLabel(formData.type_rendez_vous),
+        // Conserver le titre saisi (ou prérempli) par l'utilisateur
+        titre: formData.titre || getTypeLabel(formData.type_rendez_vous),
         dateaudience: formData.dateaudience,
         heureaudience: formData.heureaudience || null,
         lieu: formData.lieu || null,
