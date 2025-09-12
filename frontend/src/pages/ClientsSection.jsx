@@ -81,7 +81,7 @@ export default function ClientsSection() {
         <option value="">{t("Sélectionner un type de client")}</option>
         {types.map((typeItem) => (
           <option key={typeItem.idtypeclient} value={typeItem.idtypeclient}>
-            {t(typeItem.libelletypeclient.toLowerCase())}
+            {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
           </option>
         ))}
       </select>
@@ -305,9 +305,10 @@ export default function ClientsSection() {
     </form>
   );
 
-  const selectedTypeLabel = types
-    .find((t) => String(t.idtypeclient) === String(selectedType))
-    ?.libelletypeclient?.toLowerCase();
+  const selectedTypeLabel = (
+    types.find((t) => String(t.idtypeclient) === String(selectedType))
+      ?.libelletypeclient ?? ''
+  ).toLowerCase();
 
   const handleFileChange = (e) => {
     setContratFile(e.target.files[0]);
@@ -377,9 +378,10 @@ export default function ClientsSection() {
 
     const username = nom.replace(/\s+/g, "").toLowerCase();
     const selectedTypeObj = types.find((t) => t.idtypeclient == selectedType);
-    const selectedTypeLabel = types
-      .find((t) => String(t.idtypeclient) === String(selectedType))
-      ?.libelletypeclient?.toLowerCase();
+    const selectedTypeLabel = (
+      types.find((t) => String(t.idtypeclient) === String(selectedType))
+        ?.libelletypeclient ?? ''
+    ).toLowerCase();
 
     try {
       const typeClientId =
@@ -453,18 +455,16 @@ export default function ClientsSection() {
         ? client.idtypeclient.idtypeclient
         : client.idtypeclient;
     const typeObj = types.find((t) => t.idtypeclient === clientTypeId);
-    const typeLabel = typeObj ? typeObj.libelletypeclient : clientTypeId;
-
-    const translatedLabel = t(typeLabel.toLowerCase());
+    const typeLabel = typeObj ? (typeObj.libelletypeclient ?? "") : (clientTypeId ?? "");
+    const lower = String(typeLabel || "").toLowerCase();
+    const translatedLabel = t(lower);
 
     // Debug vérifier si la traduction fonctionne
     console.log(
       `🔍 Traduction de "${typeLabel.toLowerCase()}" → "${translatedLabel}" (langue: ${i18n.language})`,
     );
 
-    return translatedLabel !== typeLabel.toLowerCase()
-      ? translatedLabel
-      : typeLabel;
+    return translatedLabel !== lower ? translatedLabel : (typeLabel || "");
   };
 
   // Filtrage par nom et par type de client
@@ -682,9 +682,9 @@ export default function ClientsSection() {
           {types.map((typeItem) => (
             <option
               key={typeItem.idtypeclient}
-              value={typeItem.libelletypeclient.toLowerCase()}
+              value={(typeItem?.libelletypeclient ?? '').toLowerCase()}
             >
-              {t(typeItem.libelletypeclient.toLowerCase())}
+              {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
             </option>
           ))}
         </select>
@@ -898,7 +898,7 @@ export default function ClientsSection() {
                         key={typeItem.idtypeclient}
                         value={typeItem.idtypeclient}
                       >
-                        {t(typeItem.libelletypeclient.toLowerCase())}
+                        {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
                       </option>
                     ))}
                   </select>
@@ -1169,7 +1169,7 @@ export default function ClientsSection() {
             <option value="">{t("Sélectionner un type de client")}</option>
             {types.map((typeItem) => (
               <option key={typeItem.idtypeclient} value={typeItem.idtypeclient}>
-                {t(typeItem.libelletypeclient.toLowerCase())}
+                {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
               </option>
             ))}
           </select>

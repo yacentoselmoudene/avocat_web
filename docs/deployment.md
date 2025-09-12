@@ -29,3 +29,10 @@ python manage.py collectstatic --noinput
 
 - Commande `send_rdv_reminders` pour rappels RDV (cron/systemd timer)
 
+
+
+
+
+
+
+

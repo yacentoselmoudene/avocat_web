@@ -49,3 +49,10 @@ python manage.py send_rdv_reminders
 - Ne commitez jamais une vraie `SECRET_KEY` en production
 - Configurez `DEBUG=False` et `ALLOWED_HOSTS`
 
+
+
+
+
+
+
+

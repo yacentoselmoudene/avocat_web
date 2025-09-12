@@ -22,3 +22,10 @@
 - Lancer le backend (`runserver`) et le frontend (`npm run dev`)
 - Vérifier les flux clés (auth JWT, CRUD affaires, upload fichiers)
 
+
+
+
+
+
+
+
