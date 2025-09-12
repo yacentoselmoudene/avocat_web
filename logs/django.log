@@ -1,3 +1,18 @@
 Watching for file changes with StatReloader
 /Users/yassineelmoudene/Desktop/Devs/avocat_web/api/models.py changed, reloading.
 Watching for file changes with StatReloader
+"GET /api/audiences/?future_only=true HTTP/1.1" 401 172
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/fonctionclients/ HTTP/1.1" 200 2
+"GET /api/typeclients/ HTTP/1.1" 200 243
+"GET /api/statutaffaires/ HTTP/1.1" 200 2
+"GET /api/tribunals/ HTTP/1.1" 200 2
+"GET /api/typetribunals/ HTTP/1.1" 200 2
+"GET /api/typetribunals/ HTTP/1.1" 200 2
+"GET /api/tribunals/ HTTP/1.1" 200 2
+"GET /api/typetribunals/ HTTP/1.1" 200 2
+"GET /api/typeclients/ HTTP/1.1" 200 243
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/urls.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/urls.py changed, reloading.
+Watching for file changes with StatReloader
