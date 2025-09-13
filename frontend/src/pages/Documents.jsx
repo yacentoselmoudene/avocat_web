@@ -118,7 +118,7 @@ export default function Documents() {
             >
               {allTypes.map((tp) => (
                 <option key={tp} value={tp}>
-                  {tp === "ALL" ? t("Tous") : tp}
+                  {tp === "ALL" ? t("Tous") : t(tp)}
                 </option>
               ))}
             </select>
@@ -191,7 +191,7 @@ export default function Documents() {
                           d.type_fichier || d.doc_type || "AUTRE",
                         )}
                       >
-                        {d.type_fichier || d.doc_type || "AUTRE"}
+                        {t(d.type_fichier || d.doc_type || "AUTRE")}
                       </span>
                     </td>
                     <td style={{ padding: "12px", maxWidth: 420 }}>

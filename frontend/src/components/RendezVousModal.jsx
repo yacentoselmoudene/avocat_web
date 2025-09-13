@@ -131,19 +131,19 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
   if (!isOpen) return null;
 
   const typesRendezVous = [
-    { value: 'AUDIENCE', label: 'Audience judiciaire', icon: '⚖️' },
-    { value: 'CONSULTATION', label: 'Consultation avocat-client', icon: '👥' },
-    { value: 'REUNION', label: 'Réunion de préparation', icon: '🤝' },
-    { value: 'SIGNATURE', label: 'Signature de documents', icon: '✍️' },
-    { value: 'AUTRE', label: 'Autre rendez-vous', icon: '📅' }
+    { value: 'AUDIENCE', label: t('Audience judiciaire'), icon: '⚖️' },
+    { value: 'CONSULTATION', label: t('Consultation avocat-client'), icon: '👥' },
+    { value: 'REUNION', label: t('Réunion de préparation'), icon: '🤝' },
+    { value: 'SIGNATURE', label: t('Signature de documents'), icon: '✍️' },
+    { value: 'AUTRE', label: t('Autre rendez-vous'), icon: '📅' }
   ];
 
   const statuts = [
-    { value: 'PLANIFIE', label: 'Planifié', color: '#2196F3' },
-    { value: 'CONFIRME', label: 'Confirmé', color: '#4CAF50' },
-    { value: 'ANNULE', label: 'Annulé', color: '#f44336' },
-    { value: 'TERMINE', label: 'Terminé', color: '#9E9E9E' },
-    { value: 'REPORTE', label: 'Reporté', color: '#FF9800' }
+    { value: 'PLANIFIE', label: t('Planifié'), color: '#2196F3' },
+    { value: 'CONFIRME', label: t('Confirmé'), color: '#4CAF50' },
+    { value: 'ANNULE', label: t('Annulé'), color: '#f44336' },
+    { value: 'TERMINE', label: t('Terminé'), color: '#9E9E9E' },
+    { value: 'REPORTE', label: t('Reporté'), color: '#FF9800' }
   ];
 
   return (
@@ -151,7 +151,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
       <div style={modalContentStyle}>
         <div style={modalHeaderStyle}>
           <h3 style={{ margin: 0, color: 'var(--primary-blue)' }}>
-            {isEdit ? '✏️ Modifier le rendez-vous' : '📅 Planifier un rendez-vous'}
+            {isEdit ? `✏️ ${t('Modifier le rendez-vous')}` : `📅 ${t('Planifier un rendez-vous')}`}
           </h3>
           <button 
             onClick={onClose}
@@ -164,7 +164,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
         <div style={modalBodyStyle}>
           {/* Type de rendez-vous */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Type de rendez-vous:</label>
+            <label style={labelStyle}>{t('Type de rendez-vous:')}</label>
             <div style={radioGroupStyle}>
               {typesRendezVous.map(type => (
                 <label key={type.value} style={radioLabelStyle}>
@@ -192,12 +192,12 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
 
           {/* Titre */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Titre du rendez-vous:</label>
+            <label style={labelStyle}>{t('Titre du rendez-vous:')}</label>
             <input
               type="text"
               value={formData.titre}
               onChange={(e) => { setTitleEdited(true); handleInputChange('titre', e.target.value); }}
-              placeholder="Ex: Consultation préliminaire, Audience de plaidoirie..."
+              placeholder={t("Ex: Consultation préliminaire, Audience de plaidoirie...")}
               style={inputStyle}
             />
           </div>
@@ -205,7 +205,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
           {/* Date et heure */}
           <div style={formRowStyle}>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>Date:</label>
+              <label style={labelStyle}>{t('Date:')}</label>
               <input
                 type="date"
                 value={formData.dateaudience}
@@ -214,7 +214,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
               />
             </div>
             <div style={formGroupStyle}>
-              <label style={labelStyle}>Heure:</label>
+              <label style={labelStyle}>{t('Heure:')}</label>
               <input
                 type="time"
                 value={formData.heureaudience}
@@ -226,23 +226,23 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
 
           {/* Lieu */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Lieu:</label>
+            <label style={labelStyle}>{t('Lieu:')}</label>
             <input
               type="text"
               value={formData.lieu}
               onChange={(e) => handleInputChange('lieu', e.target.value)}
-              placeholder="Tribunal, cabinet, adresse..."
+              placeholder={t("Tribunal, cabinet, adresse...")}
               style={inputStyle}
             />
           </div>
 
           {/* Description */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Description:</label>
+            <label style={labelStyle}>{t('Description:')}</label>
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Détails du rendez-vous, ordre du jour..."
+              placeholder={t("Détails du rendez-vous, ordre du jour...")}
               style={textareaStyle}
               rows={3}
             />
@@ -250,11 +250,11 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
 
           {/* Remarques */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Remarques:</label>
+            <label style={labelStyle}>{t('Remarques:')}</label>
             <textarea
               value={formData.remarques}
               onChange={(e) => handleInputChange('remarques', e.target.value)}
-              placeholder="Informations supplémentaires..."
+              placeholder={t("Informations supplémentaires...")}
               style={textareaStyle}
               rows={2}
             />
@@ -262,7 +262,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
 
           {/* Statut */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Statut:</label>
+            <label style={labelStyle}>{t('Statut:')}</label>
             <select
               value={formData.statut}
               onChange={(e) => handleInputChange('statut', e.target.value)}
@@ -278,7 +278,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
 
           {/* Notifications */}
           <div style={formGroupStyle}>
-            <label style={labelStyle}>Rappels:</label>
+            <label style={labelStyle}>{t('Rappels:')}</label>
             <div style={checkboxGroupStyle}>
               <label style={checkboxLabelStyle}>
                 <input
@@ -287,7 +287,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
                   onChange={(e) => handleInputChange('rappel_24h', e.target.checked)}
                   style={checkboxStyle}
                 />
-                Rappel 24h avant
+                {t('Rappel 24h avant')}
               </label>
               <label style={checkboxLabelStyle}>
                 <input
@@ -296,7 +296,7 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
                   onChange={(e) => handleInputChange('rappel_1h', e.target.checked)}
                   style={checkboxStyle}
                 />
-                Rappel 1h avant
+                {t('Rappel 1h avant')}
               </label>
             </div>
           </div>
@@ -308,14 +308,14 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
             style={cancelButtonStyle}
             disabled={loading}
           >
-            Annuler
+            {t('Annuler')}
           </button>
           <button
             onClick={handleSubmit}
             style={submitButtonStyle}
             disabled={loading}
           >
-            {loading ? (isEdit ? '⏳ Enregistrement...' : '⏳ Création...') : (isEdit ? '💾 Enregistrer' : '📅 Planifier le rendez-vous')}
+            {loading ? (isEdit ? `⏳ ${t('Enregistrement...')}` : `⏳ ${t('Création...')}`) : (isEdit ? `💾 ${t('Enregistrer')}` : `📅 ${t('Planifier le rendez-vous')}`)}
           </button>
         </div>
       </div>

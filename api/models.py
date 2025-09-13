@@ -200,7 +200,8 @@ class Client(models.Model):
     nomclient_ar = models.CharField(db_column='nomClient_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     adresse1_fr = models.CharField(db_column='adresse1_fr', max_length=255, blank=True, null=True)
     adresse1_ar = models.CharField(db_column='adresse1_ar', max_length=255, blank=True, null=True)
-    prenomclient = models.CharField(db_column='prenomClient', max_length=255, blank=True, null=True)
+    prenomclient_fr = models.CharField(db_column='prenomClient_fr', max_length=255, blank=True, null=True)
+    prenomclient_ar = models.CharField(db_column='prenomClient_ar', max_length=255, blank=True, null=True)
     adresse2_fr = models.CharField(db_column='adresse2_fr', max_length=255, blank=True, null=True)
     adresse2_ar = models.CharField(db_column='adresse2_ar', max_length=255, blank=True, null=True)
     numtel1 = models.CharField(db_column='numTel1', max_length=20, blank=True, null=True)
@@ -212,6 +213,31 @@ class Client(models.Model):
     class Meta:
         managed = True
         db_table = 'client'
+
+    # Propriétés pour compatibilité avec l'API
+    @property
+    def nomclient(self):
+        return self.nomclient_fr or self.nomclient_ar or ''
+    
+    @nomclient.setter
+    def nomclient(self, value):
+        self.nomclient_fr = value
+    
+    @property
+    def adresse1(self):
+        return self.adresse1_fr or self.adresse1_ar or ''
+    
+    @adresse1.setter
+    def adresse1(self, value):
+        self.adresse1_fr = value
+    
+    @property
+    def adresse2(self):
+        return self.adresse2_fr or self.adresse2_ar or ''
+    
+    @adresse2.setter
+    def adresse2(self, value):
+        self.adresse2_fr = value
 
     def __str__(self):
         return self.nomclient
@@ -529,8 +555,13 @@ class TypeClient(models.Model):
     libelletypeclient_fr = models.CharField(db_column='libelleTypeClient_fr', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     libelletypeclient_ar = models.CharField(db_column='libelleTypeClient_ar', max_length=100, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
 
-    def __str__(self):
+    # Propriété pour compatibilité avec l'API
+    @property
+    def libelletypeclient(self):
         return self.libelletypeclient_fr or self.libelletypeclient_ar or ''
+
+    def __str__(self):
+        return self.libelletypeclient
 
     class Meta:
         managed = True

@@ -8,7 +8,7 @@ import WorkflowPage from "../pages/WorkflowPage";
 import RendezVousModal from "../components/RendezVousModal";
 
 export default function AffairesSection() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [affaires, setAffaires] = useState([]);
   const [error, setError] = useState("");
   const [dateOuverture, setDateOuverture] = useState("");
@@ -185,7 +185,7 @@ export default function AffairesSection() {
         );
         if (fonction) {
           // Déterminer si c'est demandeur ou opposant selon la fonction
-          const fonctionLibelle = fonction.libellefonction.toLowerCase();
+          const fonctionLibelle = (fonction.libellefonction_fr || fonction.libellefonction_ar || '').toLowerCase();
           if (
             fonctionLibelle.includes("opposant") ||
             fonctionLibelle.includes("مدعى عليه")
@@ -235,16 +235,30 @@ export default function AffairesSection() {
     const statut = a.statut_courant || "";
     const typeClient = client
       ? client.type_client
-        ? String(client.type_client).toLowerCase()
-        : (typesClient.find((t) => t.idtypeclient === client.idtypeclient)?.libelletypeclient ?? '').toLowerCase() || ''
+        ? (client.type_client.libelletypeclient_fr || client.type_client.libelletypeclient_ar || '').toLowerCase().replace('é', 'e')
+        : (typesClient.find((t) => t.idtypeclient === client.idtypeclient)?.libelletypeclient_fr || typesClient.find((t) => t.idtypeclient === client.idtypeclient)?.libelletypeclient_ar || '').toLowerCase().replace('é', 'e') || ''
       : "";
+    
+    // Debug temporaire
+    if (filterTypeClient && filterTypeClient !== "") {
+      console.log('Debug filtrage:', {
+        affaireId: a.idaffaire,
+        clientId: client?.idclient,
+        typeClient,
+        filterTypeClient,
+        match: typeClient === filterTypeClient,
+        clientTypeClient: client?.type_client
+      });
+    }
     const matchSearch =
       search === "" ||
       (a.idaffaire &&
-        a.idaffaire.toLowerCase().includes(search.toLowerCase())) ||
+        String(a.idaffaire).toLowerCase().includes((search || '').toLowerCase())) ||
       (client &&
-        client.nomclient &&
-        client.nomclient.toLowerCase().includes(search.toLowerCase()));
+         ((client.nomclient_fr && String(client.nomclient_fr).toLowerCase().includes((search || '').toLowerCase())) ||
+         (client.nomclient_ar && String(client.nomclient_ar).toLowerCase().includes((search || '').toLowerCase())) ||
+         (client.prenomclient_fr && String(client.prenomclient_fr).toLowerCase().includes((search || '').toLowerCase())) ||
+         (client.prenomclient_ar && String(client.prenomclient_ar).toLowerCase().includes((search || '').toLowerCase()))));
     const matchTypeClient =
       filterTypeClient === "" || typeClient === filterTypeClient;
 
@@ -322,11 +336,13 @@ export default function AffairesSection() {
   const getOrCreateFonctionId = async (role) => {
     const res = await api.get("/api/fonctionclients/");
     const existing = res.data.find(
-      (f) => f.libellefonction.toLowerCase() === role.toLowerCase(),
+      (f) => (f.libellefonction_fr || '').toLowerCase() === (role || '').toLowerCase() ||
+             (f.libellefonction_ar || '').toLowerCase() === (role || '').toLowerCase(),
     );
     if (existing) return existing.idfonction;
     const createRes = await api.post("/api/fonctionclients/", {
-      libellefonction: role,
+      libellefonction_fr: role,
+      libellefonction_ar: role,
     });
     return createRes.data.idfonction;
   };
@@ -349,7 +365,8 @@ export default function AffairesSection() {
           //  si l'opposant existe deja : meme nom et email)
           const oppRes = await api.get("/api/opposants/", {
             params: {
-              nomopposant: client.nomclient,
+              nomopposant_fr: client.nomclient_fr,
+              nomopposant_ar: client.nomclient_ar,
               email: client.email,
             },
           });
@@ -359,9 +376,12 @@ export default function AffairesSection() {
           } else {
             // Sinon, on le crée
             const newOppRes = await api.post("/api/opposants/", {
-              nomopposant: client.nomclient,
-              adresse1: client.adresse1,
-              adresse2: client.adresse2,
+              nomopposant_fr: client.nomclient_fr,
+              nomopposant_ar: client.nomclient_ar,
+              adresse1_fr: client.adresse1_fr,
+              adresse1_ar: client.adresse1_ar,
+              adresse2_fr: client.adresse2_fr,
+              adresse2_ar: client.adresse2_ar,
               numtel1: client.numtel1,
               numtel2: client.numtel2,
               email: client.email,
@@ -663,7 +683,7 @@ export default function AffairesSection() {
           aria-expanded={showCreateForm}
           style={{ padding: "10px 14px", margin: "0 auto" }}
         >
-          {showCreateForm ? " Fermer le formulaire" : " Nouvelle affaire"}
+          {showCreateForm ? t("Fermer le formulaire") : t("Nouvelle affaire")}
         </button>
       </div>
       {/* Formulaire de création d'affaire  */}
@@ -798,7 +818,10 @@ export default function AffairesSection() {
                 <option value="">{t("Sélectionner un client")}</option>
                 {clients.map((c) => (
                   <option key={c.idclient} value={c.idclient}>
-                    {c.nomclient}
+                    {i18n.language === 'ar' ? 
+                      (c.nomclient_ar || c.nomclient_fr || c.nomclient) + ' ' + (c.prenomclient_ar || c.prenomclient_fr || '') :
+                      (c.nomclient_fr || c.nomclient_ar || c.nomclient) + ' ' + (c.prenomclient_fr || c.prenomclient_ar || '')
+                    }
                   </option>
                 ))}
               </select>
@@ -1353,14 +1376,27 @@ export default function AffairesSection() {
           }}
         >
           <option value="">{t("Tous les types de client")}</option>
-          {typesClient.map((typeItem) => (
-            <option
-              key={typeItem.idtypeclient}
-              value={typeItem.libelletypeclient.toLowerCase()}
-            >
-              {t(typeItem.libelletypeclient.toLowerCase())}
-            </option>
-          ))}
+          {typesClient.map((typeItem) => {
+            const typeLabel = typeItem.libelletypeclient_fr || typeItem.libelletypeclient_ar || '';
+            const normalizedLabel = typeLabel.toLowerCase().replace('é', 'e');
+            
+            // Debug temporaire
+            console.log('Debug type client:', {
+              original: typeLabel,
+              normalized: normalizedLabel,
+              translation: t(normalizedLabel),
+              directTranslation: t(typeLabel.toLowerCase())
+            });
+            
+            return (
+              <option
+                key={typeItem.idtypeclient}
+                value={normalizedLabel}
+              >
+                {t(typeLabel.toLowerCase())}
+              </option>
+            );
+          })}
         </select>
         <select
           value={filterType}
@@ -1582,7 +1618,10 @@ export default function AffairesSection() {
                     <option value="">{t("Sélectionner un client")}</option>
                     {clients.map((c) => (
                       <option key={c.idclient} value={c.idclient}>
-                        {c.nomclient}
+                        {i18n.language === 'ar' ? 
+                          (c.nomclient_ar || c.nomclient_fr || c.nomclient) + ' ' + (c.prenomclient_ar || c.prenomclient_fr || '') :
+                          (c.nomclient_fr || c.nomclient_ar || c.nomclient) + ' ' + (c.prenomclient_fr || c.prenomclient_ar || '')
+                        }
                       </option>
                     ))}
                   </select>
@@ -1778,7 +1817,10 @@ export default function AffairesSection() {
                   {a.dateouverture}
                 </td>
                 <td style={{ padding: "8px", color: "#1a237e" }}>
-                  {a.client_nom || "Non assigné"}
+                  {typeof a.client_nom === 'object' ? 
+                    (i18n.language === 'ar' ? a.client_nom.ar : a.client_nom.fr) : 
+                    (a.client_nom || "Non assigné")
+                  }
                 </td>
                 <td style={{ padding: "8px", color: "#1a237e" }}>
                   {getTypeAffaireLabel(a)}
@@ -2050,12 +2092,12 @@ export default function AffairesSection() {
               <option value="En cours d'instruction">
                 En cours d'instruction
               </option>
-              <option value="En instance">En instance</option>
-              <option value="Jugée">Jugée</option>
-              <option value="En appel">En appel</option>
-              <option value="En cassation">En cassation</option>
-              <option value="Classée sans suite">Classée sans suite</option>
-              <option value="Suspendue">Suspendue</option>
+              <option value="En instance">{t("En instance")}</option>
+              <option value="Jugée">{t("Jugée")}</option>
+              <option value="En appel">{t("En appel")}</option>
+              <option value="En cassation">{t("En cassation")}</option>
+              <option value="Classée sans suite">{t("Classée sans suite")}</option>
+              <option value="Suspendue">{t("Suspendue")}</option>
             </select>
             {error && <div style={{ color: "red" }}>{error}</div>}
             <button
@@ -2145,10 +2187,10 @@ export default function AffairesSection() {
                   Informations du client
                 </div>
                 <div>
-                  <b>Nom :</b> {client.nomclient}
+                  <b>Nom :</b> {i18n.language === 'ar' ? (client.nomclient_ar || client.nomclient_fr || client.nomclient) : (client.nomclient_fr || client.nomclient_ar || client.nomclient)}
                 </div>
                 <div>
-                  <b>Prénom :</b> {client.prenomclient}
+                  <b>Prénom :</b> {i18n.language === 'ar' ? (client.prenomclient_ar || client.prenomclient_fr) : (client.prenomclient_fr || client.prenomclient_ar)}
                 </div>
                 <div>
                   <b>Email :</b> {client.email}
