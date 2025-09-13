@@ -173,7 +173,7 @@ const WorkflowPage = () => {
           const fonction = response.data.role_client_libelle;
 
           // Détection plus robuste du rôle (insensible à la casse)
-          const fonctionLower = fonction.toLowerCase();
+          const fonctionLower = (fonction || '').toLowerCase();
           const fonctionUpper = fonction.toUpperCase();
 
           if (
@@ -1002,7 +1002,7 @@ const WorkflowPage = () => {
       return;
     }
     const filtered = opposants.filter((o) =>
-      o.nomopposant.toLowerCase().includes(val.toLowerCase()),
+      ((o.nomopposant_fr || o.nomopposant_ar || '') || '').toLowerCase().includes((val || '').toLowerCase()),
     );
     setFilteredOpposants(filtered);
     setShowOpposantDropdown(filtered.length > 0);
@@ -1010,7 +1010,7 @@ const WorkflowPage = () => {
 
   const selectOpposant = (opp) => {
     setSelectedOpposant(opp.idopposant);
-    setSearchOpposant(opp.nomopposant);
+    setSearchOpposant(opp.nomopposant_fr || opp.nomopposant_ar || '');
     setShowOpposantDropdown(false);
   };
 
@@ -1041,7 +1041,7 @@ const WorkflowPage = () => {
           setSelectedOpposant(opposant_id);
           const opposant = opposants.find((o) => o.idopposant == opposant_id);
           if (opposant) {
-            setSearchOpposant(opposant.nomopposant);
+            setSearchOpposant(opposant.nomopposant_fr || opposant.nomopposant_ar || '');
           }
         }
 
@@ -3660,8 +3660,8 @@ const EtapeItem = ({
               const typesResponse = await api.get("/api/typeinterventions/");
               const existingType = typesResponse.data.find(
                 (t) =>
-                  t.libelletypeintervention.toLowerCase() ===
-                  libelleType.toLowerCase(),
+                  (t.libelletypeintervention || '').toLowerCase() ===
+                  (libelleType || '').toLowerCase(),
               );
 
               if (existingType) {
@@ -5996,7 +5996,7 @@ const NotificationParamsSection = ({
                 tabIndex={-1}
                 aria-selected={selectedOpposant === o.idopposant}
               >
-                {o.nomopposant} - {o.adresse1}
+                {(o.nomopposant_fr || o.nomopposant_ar || '')} - {(o.adresse1_fr || o.adresse1_ar || '')}
               </div>
             ))}
           </div>
@@ -6081,7 +6081,7 @@ const NotificationParamsUsed = ({
           }}
         >
           {opposants.find((o) => o.idopposant == selectedOpposant)
-            ?.nomopposant || ""}
+            ?.nomopposant_fr || opposants.find((o) => o.idopposant == selectedOpposant)?.nomopposant_ar || ""}
         </div>
       </div>
     </div>
@@ -6227,7 +6227,7 @@ const NotificationSelectionSection = ({
                 onMouseEnter={(e) => (e.target.style.background = "#f5f5f5")}
                 onMouseLeave={(e) => (e.target.style.background = "#fff")}
               >
-                {o.nomopposant}
+                {o.nomopposant_fr || o.nomopposant_ar || ''}
               </div>
             ))}
           </div>

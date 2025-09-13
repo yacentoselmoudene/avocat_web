@@ -49,19 +49,34 @@ class ClientProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
         fields = [
-            'idclient', 'username', 'nomclient_fr', 'prenomclient', 'email',
-            'numtel1', 'numtel2', 'adresse1_fr', 'adresse2_fr',
+            'idclient', 'username', 'nomclient_fr', 'nomclient_ar', 'prenomclient_fr', 'prenomclient_ar', 'email',
+            'numtel1', 'numtel2', 'adresse1_fr', 'adresse1_ar', 'adresse2_fr', 'adresse2_ar',
             'type_client', 'contrat', 'preferred_language'
         ]
 
     def get_type_client(self, obj):
-        return obj.idtypeclient.libelletypeclient_fr if obj.idtypeclient else None
+        if not obj.idtypeclient:
+            return None
+        # Retourner l'objet type complet pour que le frontend puisse accéder aux champs fr et ar
+        return {
+            'idtypeclient': obj.idtypeclient.idtypeclient,
+            'libelletypeclient_fr': obj.idtypeclient.libelletypeclient_fr,
+            'libelletypeclient_ar': obj.idtypeclient.libelletypeclient_ar,
+            'libelletypeclient': obj.idtypeclient.libelletypeclient_fr or obj.idtypeclient.libelletypeclient_ar or ''
+        }
 
     def get_contrat(self, obj):
-        if obj.idtypeclient and (getattr(obj.idtypeclient, 'libelletypeclient_fr', '') or '').lower() == 'societe':
-            contrat = Contrat.objects.filter(idclient=obj).first()
-            print("DEBUG contrat trouvé:", contrat)
-            return ContratSerializer(contrat).data if contrat else None
+        if obj.idtypeclient:
+            # Vérifier si c'est une société (comparaison insensible à la casse pour les deux langues)
+            type_fr = (obj.idtypeclient.libelletypeclient_fr or "").lower().strip()
+            type_ar = (obj.idtypeclient.libelletypeclient_ar or "").lower().strip()
+            
+            is_societe = (type_fr == 'société' or type_ar == 'شركة')
+            
+            if is_societe:
+                contrat = Contrat.objects.filter(idclient=obj).first()
+                if contrat:
+                    return ContratSerializer(contrat, context=self.context).data
         return None
 
 
@@ -159,21 +174,17 @@ class AffairejudiciaireSerializer(serializers.ModelSerializer):
 
     def get_client_nom(self, obj):
         if obj.idclient:
-            nom = obj.idclient.nomclient_fr or ""
-            prenom = obj.idclient.prenomclient or ""
+            nom_fr = obj.idclient.nomclient_fr or ""
+            prenom_fr = obj.idclient.prenomclient_fr or ""
+            nom_ar = obj.idclient.nomclient_ar or ""
+            prenom_ar = obj.idclient.prenomclient_ar or ""
             
-            # Éviter la duplication si nom et prénom sont identiques
-            if nom and prenom and nom.strip() == prenom.strip():
-                return nom.strip()
-            elif nom and prenom:
-                return f"{nom} {prenom}".strip()
-            elif nom:
-                return nom.strip()
-            elif prenom:
-                return prenom.strip()
-            else:
-                return "Non assigné"
-        return "Non assigné"
+            # Retourner un objet avec les deux langues
+            return {
+                'fr': f"{nom_fr} {prenom_fr}".strip() or "Non assigné",
+                'ar': f"{nom_ar} {prenom_ar}".strip() or "غير مخصص"
+            }
+        return {'fr': "Non assigné", 'ar': "غير مخصص"}
 
     def get_numero_complet(self, obj):
         return f"{obj.numero_dossier}/{obj.code_dossier}/{obj.annee_dossier}"
@@ -411,12 +422,19 @@ class AudienceSerializer(serializers.ModelSerializer):
         try:
             client = getattr(getattr(obj, 'idaffaire', None), 'idclient', None)
             if client:
-                nom = getattr(client, 'nomclient_fr', '') or ''
-                prenom = getattr(client, 'prenomclient', '') or ''
-                return f"{nom} {prenom}".strip() or None
+                nom_fr = getattr(client, 'nomclient_fr', '') or ''
+                prenom_fr = getattr(client, 'prenomclient_fr', '') or ''
+                nom_ar = getattr(client, 'nomclient_ar', '') or ''
+                prenom_ar = getattr(client, 'prenomclient_ar', '') or ''
+                
+                # Retourner un objet avec les deux langues
+                return {
+                    'fr': f"{nom_fr} {prenom_fr}".strip() or "Non assigné",
+                    'ar': f"{nom_ar} {prenom_ar}".strip() or "غير مخصص"
+                }
         except Exception:
             pass
-        return None
+        return {'fr': "Non assigné", 'ar': "غير مخصص"}
 
 # Serializer pour les avocats
 class AvocatSerializer(serializers.ModelSerializer):

@@ -241,14 +241,26 @@ class ClientViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = Client.objects.all()
         search = self.request.query_params.get('search', None)
+        type_filter = self.request.query_params.get('type', None)
+        
         if search:
             queryset = queryset.filter(
-                models.Q(nomclient__icontains=search) |
-                models.Q(prenomclient__icontains=search) |
-                models.Q(email__icontains=search) |
-                models.Q(numtel1__icontains=search) |
-                models.Q(numtel2__icontains=search)
+                Q(nomclient_fr__icontains=search) |
+                Q(nomclient_ar__icontains=search) |
+                Q(prenomclient_fr__icontains=search) |
+                Q(prenomclient_ar__icontains=search) |
+                Q(email__icontains=search) |
+                Q(numtel1__icontains=search) |
+                Q(numtel2__icontains=search)
             )
+        
+        if type_filter:
+            # Filtrer par type (français ou arabe)
+            queryset = queryset.filter(
+                Q(idtypeclient__libelletypeclient_fr__icontains=type_filter) |
+                Q(idtypeclient__libelletypeclient_ar__icontains=type_filter)
+            )
+        
         return queryset
     
     def destroy(self, request, *args, **kwargs):
@@ -372,7 +384,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
             debug_info['client_info'] = {
                 'client_id': user.client.idclient,
                 'nom': user.client.nomclient,
-                'prenom': user.client.prenomclient,
+                'prenom': user.client.prenomclient_fr or user.client.prenomclient_ar or '',
                 'email': user.client.email
             }
 
@@ -497,7 +509,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 'client_info': {
                     'id': client_id,
                     'nom': client.nomclient,
-                    'prenom': client.prenomclient,
+                    'prenom': client.prenomclient_fr or client.prenomclient_ar or '',
                     'email': client.email
                 },
                 'affaires': {
@@ -548,10 +560,13 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 try:
                     client = Client.objects.get(pk=idclient)
                     opposant, created = Opposant.objects.get_or_create(
-                        nomopposant=client.nomclient,
+                        nomopposant_fr=client.nomclient_fr,
+                        nomopposant_ar=client.nomclient_ar,
                         defaults={
-                            'adresse1': client.adresse1,
-                            'adresse2': client.adresse2,
+                            'adresse1_fr': client.adresse1_fr,
+                            'adresse1_ar': client.adresse1_ar,
+                            'adresse2_fr': client.adresse2_fr,
+                            'adresse2_ar': client.adresse2_ar,
                             'numtel1': client.numtel1,
                             'numtel2': client.numtel2,
                             'email': client.email,
@@ -704,13 +719,17 @@ class CreateClientView(APIView):
                     v = data.getlist(key)
                     return v[0] if v else ''
                 client = Client.objects.create(
-                    nomclient=get_first(request.data, 'nomclient'),
-                    prenomclient=get_first(request.data, 'prenomclient'),
+                    nomclient_fr=get_first(request.data, 'nomclient_fr'),
+                    nomclient_ar=get_first(request.data, 'nomclient_ar'),
+                    prenomclient_fr=get_first(request.data, 'prenomclient_fr'),
+                    prenomclient_ar=get_first(request.data, 'prenomclient_ar'),
                     email=get_first(request.data, 'email'),
                     numtel1=get_first(request.data, 'numtel1'),
                     numtel2=get_first(request.data, 'numtel2'),
-                    adresse1=get_first(request.data, 'adresse1'),
-                    adresse2=get_first(request.data, 'adresse2'),
+                    adresse1_fr=get_first(request.data, 'adresse1_fr'),
+                    adresse1_ar=get_first(request.data, 'adresse1_ar'),
+                    adresse2_fr=get_first(request.data, 'adresse2_fr'),
+                    adresse2_ar=get_first(request.data, 'adresse2_ar'),
                     idtypeclient_id=idtypeclient,
                     user=user,
                 )
@@ -727,7 +746,17 @@ class CreateClientView(APIView):
                     'message': 'Client créé avec succès',
                     'client': {
                         'idclient': client.idclient,
-                        'nomclient': client.nomclient,
+                        'nomclient_fr': client.nomclient_fr,
+                        'nomclient_ar': client.nomclient_ar,
+                        'nomclient': client.nomclient,  # Pour compatibilité
+                        'prenomclient_fr': client.prenomclient_fr,
+                        'prenomclient_ar': client.prenomclient_ar,
+                        'adresse1_fr': client.adresse1_fr,
+                        'adresse1_ar': client.adresse1_ar,
+                        'adresse1': client.adresse1,  # Pour compatibilité
+                        'adresse2_fr': client.adresse2_fr,
+                        'adresse2_ar': client.adresse2_ar,
+                        'adresse2': client.adresse2,  # Pour compatibilité
                         'type_client': type_client.libelletypeclient_fr or type_client.libelletypeclient_ar or '',
                         'user_id': user.id
                     },
@@ -1206,7 +1235,7 @@ class OpposantViewSet(viewsets.ModelViewSet):
     queryset = Opposant.objects.all()
     serializer_class = OpposantSerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['nomopposant', 'email']
+    filterset_fields = ['nomopposant_fr', 'nomopposant_ar', 'email']
 
 
 class CategorieAffaireViewSet(viewsets.ModelViewSet):
@@ -3327,7 +3356,7 @@ def get_huissiers_disponibles(request):
 def get_opposants_disponibles(request):
     """Récupérer la liste des opposants pour l'autocomplétion"""
     try:
-        opposants = Opposant.objects.all().values('idopposant', 'nomopposant', 'adresse1', 'adresse2', 'numtel1', 'numtel2', 'email')
+        opposants = Opposant.objects.all().values('idopposant', 'nomopposant_fr', 'nomopposant_ar', 'adresse1_fr', 'adresse1_ar', 'adresse2_fr', 'adresse2_ar', 'numtel1', 'numtel2', 'email')
         return Response(opposants, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -3449,6 +3478,25 @@ def get_tous_documents(request):
         # Normalisation minimale des contrats pour s'aligner avec FichierSerializer
         normalized_contrats = []
         for c in contrats_data:
+            # Trouver l'affaire correspondante pour ce contrat (via le client)
+            affaire_info = None
+            if c.get('client_id'):
+                try:
+                    affaire = Affairejudiciaire.objects.filter(
+                        idclient_id=c.get('client_id')
+                    ).order_by('-dateouverture').first()  # Prendre la plus récente
+                    
+                    if affaire:
+                        affaire_info = {
+                            'affaire_id': affaire.idaffaire,
+                            'affaire_reference': f"{affaire.numero_dossier or '-'}/{affaire.code_dossier or '-'}/{affaire.annee_dossier or '-'}",
+                            'affaire_numero_dossier': affaire.numero_dossier,
+                            'affaire_code_dossier': affaire.code_dossier,
+                            'affaire_annee_dossier': affaire.annee_dossier,
+                        }
+                except Exception as e:
+                    print(f"Erreur lors de la recherche d'affaire pour contrat {c.get('idcontrat')}: {e}")
+            
             normalized_contrats.append({
                 'id': c.get('idcontrat'),
                 'nom_fichier': c.get('nom_fichier'),
@@ -3458,11 +3506,11 @@ def get_tous_documents(request):
                 'version': None,
                 'public': None,
                 'upload_par_username': None,
-                'affaire_id': None,
-                'affaire_reference': None,
-                'affaire_numero_dossier': None,
-                'affaire_code_dossier': None,
-                'affaire_annee_dossier': None,
+                'affaire_id': affaire_info['affaire_id'] if affaire_info else None,
+                'affaire_reference': affaire_info['affaire_reference'] if affaire_info else None,
+                'affaire_numero_dossier': affaire_info['affaire_numero_dossier'] if affaire_info else None,
+                'affaire_code_dossier': affaire_info['affaire_code_dossier'] if affaire_info else None,
+                'affaire_annee_dossier': affaire_info['affaire_annee_dossier'] if affaire_info else None,
                 'client_id': c.get('client_id'),
                 'client_nom': c.get('client_nom'),
                 'doc_type': 'CONTRAT',

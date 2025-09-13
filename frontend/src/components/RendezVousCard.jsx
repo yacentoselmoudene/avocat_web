@@ -223,7 +223,11 @@ const RendezVousCard = ({
           })()}
           <div style={briefMetaStyle}>
             {rendezVous.client_nom && (
-              <span style={miniChipStyle}>{t("Client")}: {rendezVous.client_nom}</span>
+              <span style={miniChipStyle}>
+                {t("Client")}: {typeof rendezVous.client_nom === 'object' 
+                  ? (isArabic ? rendezVous.client_nom.ar : rendezVous.client_nom.fr)
+                  : rendezVous.client_nom}
+              </span>
             )}
             {rendezVous.affaire_numero && (
               <span style={miniChipStyle}>
@@ -285,7 +289,9 @@ const RendezVousCard = ({
             <div style={infoRowStyle}>
               <span style={infoLabelStyle}>{t("Client")}</span>
               <span style={infoValueStyle}>
-                {rendezVous.client_nom}
+                {typeof rendezVous.client_nom === 'object' 
+                  ? (isArabic ? rendezVous.client_nom.ar : rendezVous.client_nom.fr)
+                  : rendezVous.client_nom}
                 {rendezVous.client_tel ? ` • ${rendezVous.client_tel}` : ""}
               </span>
             </div>

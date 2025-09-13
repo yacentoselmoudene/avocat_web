@@ -211,18 +211,33 @@ const AgendaPage = () => {
 
   const getTypeStats = () => {
     const labelMap = {
-      AUDIENCE: "Audience",
-      CONSULTATION: "Consultation",
-      REUNION: "Réunion",
-      SIGNATURE: "Signature",
+      AUDIENCE: t("Audience judiciaire"),
+      CONSULTATION: t("Consultation avocat-client"),
+      REUNION: t("Réunion de préparation"),
+      SIGNATURE: t("Signature de documents"),
+      AUTRE: t("Autre"),
     };
     const stats = {};
     rendezVous.forEach((rdv) => {
-      const raw =
-        rdv.type_rendez_vous_display || rdv.type_rendez_vous || "AUTRE";
-      const code = typeof raw === "string" ? raw.toUpperCase() : raw;
+      // Utiliser la même logique que getTypeLabel() dans RendezVousCard
+      let code = "AUTRE";
+      
+      // 1) priorité au display envoyé par l'API
+      if (rdv.type_rendez_vous_display && typeof rdv.type_rendez_vous_display === "string" && rdv.type_rendez_vous_display.trim().length > 0) {
+        code = rdv.type_rendez_vous_display.trim().toUpperCase();
+      }
+      // 2) fallback au code
+      else if (rdv.type_rendez_vous && typeof rdv.type_rendez_vous === "string" && rdv.type_rendez_vous.trim().length > 0) {
+        code = rdv.type_rendez_vous.trim().toUpperCase();
+      }
+      
+      // Vérifier si le code est reconnu
       const label = labelMap[code];
-      if (!label) return; // ignore Autre
+      if (!label) {
+        // Si le type n'est pas reconnu, l'ajouter comme "Autre"
+        code = "AUTRE";
+      }
+      
       stats[code] = (stats[code] || 0) + 1;
     });
     return stats;
@@ -262,7 +277,7 @@ const AgendaPage = () => {
           </div>
           {Object.entries(typeStats)
             .filter(([type]) =>
-              ["AUDIENCE", "CONSULTATION", "REUNION", "SIGNATURE"].includes(
+              ["AUDIENCE", "CONSULTATION", "REUNION", "SIGNATURE", "AUTRE"].includes(
                 type,
               ),
             )
@@ -272,13 +287,13 @@ const AgendaPage = () => {
                 <div style={statLabelStyle}>
                   {t(
                     type === "AUDIENCE"
-                      ? "Audience"
+                      ? "Audience judiciaire"
                       : type === "CONSULTATION"
-                        ? "Consultation"
+                        ? "Consultation avocat-client"
                         : type === "REUNION"
-                          ? "Réunion"
+                          ? "Réunion de préparation"
                           : type === "SIGNATURE"
-                            ? "Signature"
+                            ? "Signature de documents"
                             : "Autre",
                   )}
                 </div>
@@ -316,7 +331,7 @@ const AgendaPage = () => {
               </option>
               <option value="REUNION">{t("Réunion de préparation")}</option>
               <option value="SIGNATURE">{t("Signature de documents")}</option>
-              <option value="AUTRE">{t("Autre rendez-vous")}</option>
+              <option value="AUTRE">{t("Autre")}</option>
             </select>
           </div>
 
