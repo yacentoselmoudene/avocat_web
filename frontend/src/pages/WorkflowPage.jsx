@@ -672,7 +672,7 @@ const WorkflowPage = () => {
       formData.append("type_fichier", "PIECE_PROCEDURE");
 
       const response = await api.post(
-        `/api/affaires/${affaireId}/etapes/${etapeId}/upload-fichier/`,
+        `affaires/${affaireId}/etapes/${etapeId}/upload-fichier/`,
         formData,
         {
           headers: {
@@ -892,7 +892,7 @@ const WorkflowPage = () => {
 
       //  l'API pour créer la nouvelle affaire d'appel
       const response = await api.post(
-        "/api/affaires/appel/",
+        "affaires/appel/",
         nouvelleAffaireData,
       );
 
@@ -1072,7 +1072,7 @@ const WorkflowPage = () => {
   async function sauvegarderParametresNotification() {
     try {
       const response = await api.post(
-        `/api/affaires/${affaireId}/notification-settings/`,
+        `affaires/${affaireId}/notification-settings/`,
         {
           huissier_id: selectedHuissier,
           opposant_id: selectedOpposant,
@@ -1156,7 +1156,7 @@ const WorkflowPage = () => {
       formData.append("description", `Document pour l'étape ${index + 1}`);
 
       const response = await api.post(
-        `/api/affaires/${affaireId}/upload-fichier/`,
+        `affaires/${affaireId}/upload-fichier/`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -1194,7 +1194,7 @@ const WorkflowPage = () => {
   const creerEtape = async (libelle, delai, observations) => {
     try {
       const response = await api.post(
-        `/api/affaires/${affaireId}/etapes/creer/`,
+        `affaires/${affaireId}/etapes/creer/`,
         {
           libelle,
           delai_legal: delai,
@@ -1346,7 +1346,7 @@ const WorkflowPage = () => {
       );
 
       const response = await api.post(
-        `/api/affaires/${affaireId}/etapes/${etapeId}/completer/`,
+        `affaires/${affaireId}/etapes/${etapeId}/completer/`,
         formData || data,
         formData
           ? {
@@ -1466,7 +1466,7 @@ const WorkflowPage = () => {
         telephonetemoin: telephone || "",
       };
 
-      const temoinResponse = await api.post("/api/temoins/", temoinData);
+      const temoinResponse = await api.post("temoins/", temoinData);
       const temoin = temoinResponse.data;
 
       //  Créer la participation du témoin à l'étape
@@ -1485,7 +1485,7 @@ const WorkflowPage = () => {
 
         try {
           const participationResponse = await api.post(
-            "/api/participationtemoinetapes/",
+            "participationtemoinetapes/",
             participationData,
           );
           console.log("Participation créée:", participationResponse.data);
@@ -3647,7 +3647,7 @@ const EtapeItem = ({
               etape_obligatoire: true,
             };
             console.log("Création de l'étape avec données:", etapeData);
-            await api.post("/api/etapejudiciaires/", etapeData);
+            await api.post("etapejudiciaires/", etapeData);
             console.log("Étape créée:", etapeId);
           } else {
             console.log("Étape existe déjà:", etapeId);
@@ -3670,7 +3670,7 @@ const EtapeItem = ({
 
               // Si pas trouvé, créer un nouveau type
               const newTypeResponse = await api.post(
-                "/api/typeinterventions/",
+                "typeinterventions/",
                 {
                   libelletypeintervention: libelleType,
                 },
@@ -3706,7 +3706,7 @@ const EtapeItem = ({
 
             console.log("Données participation huissier:", participationData);
             await api.post(
-              "/api/participationhuissieretapes/",
+              "participationhuissieretapes/",
               participationData,
             );
             console.log(
@@ -3734,7 +3734,7 @@ const EtapeItem = ({
 
                 console.log("Données participation expert:", participationData);
                 await api.post(
-                  "/api/participationexpertetapes/",
+                  "participationexpertetapes/",
                   participationData,
                 );
                 console.log(
@@ -3768,7 +3768,7 @@ const EtapeItem = ({
                 participationData,
               );
               await api.post(
-                "/api/participationhuissieretapes/",
+                "participationhuissieretapes/",
                 participationData,
               );
               console.log(
@@ -6696,7 +6696,7 @@ const ExecutionSection = ({
       }
 
       const response = await api.post(
-        `/api/affaires/${affaireId}/execution/pv/`,
+        `affaires/${affaireId}/execution/pv/`,
         pvData,
       );
 

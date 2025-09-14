@@ -543,7 +543,7 @@ export default function ClientsSection() {
         }
       }
 
-      const res = await api.post("/api/create-client/", formData, {
+      const res = await api.post("create-client/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 

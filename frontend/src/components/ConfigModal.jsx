@@ -206,7 +206,7 @@ export default function ConfigModal({ onClose }) {
       }
 
       console.log("Données envoyées:", dataToSend);
-      await api.post(`/api/${selectedTable.key}/`, dataToSend);
+      await api.post(`${selectedTable.key}/`, dataToSend);
       setNewValue("");
       const res = await api.get(`/api/${selectedTable.key}/`);
       setItems(res.data);
@@ -346,7 +346,7 @@ export default function ConfigModal({ onClose }) {
 
       console.log("Données du tribunal à envoyer:", dataToSend);
       
-      await api.post("/api/tribunals/", dataToSend);
+      await api.post("tribunals/", dataToSend);
       
       // Réinitialiser le formulaire
       setTribunalForm({

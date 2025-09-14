@@ -334,13 +334,13 @@ export default function AffairesSection() {
 
   //  fonction du client dans l'affaire
   const getOrCreateFonctionId = async (role) => {
-    const res = await api.get("/api/fonctionclients/");
+    const res = await api.get("fonctionclients/");
     const existing = res.data.find(
       (f) => (f.libellefonction_fr || '').toLowerCase() === (role || '').toLowerCase() ||
              (f.libellefonction_ar || '').toLowerCase() === (role || '').toLowerCase(),
     );
     if (existing) return existing.idfonction;
-    const createRes = await api.post("/api/fonctionclients/", {
+    const createRes = await api.post("fonctionclients/", {
       libellefonction_fr: role,
       libellefonction_ar: role,
     });
@@ -375,7 +375,7 @@ export default function AffairesSection() {
             idopposant = oppRes.data[0].idopposant;
           } else {
             // Sinon, on le crée
-            const newOppRes = await api.post("/api/opposants/", {
+            const newOppRes = await api.post("opposants/", {
               nomopposant_fr: client.nomclient_fr,
               nomopposant_ar: client.nomclient_ar,
               adresse1_fr: client.adresse1_fr,
@@ -407,7 +407,7 @@ export default function AffairesSection() {
             idtypeaffaire = typeRes.data[0].idtypeaffaire;
           } else {
             // Créer le nouveau type d'affaire
-            const newTypeRes = await api.post("/api/typeaffaires/", {
+            const newTypeRes = await api.post("typeaffaires/", {
               libelletypeaffaire: typeAffaire,
             });
             idtypeaffaire = newTypeRes.data.idtypeaffaire;
@@ -434,7 +434,7 @@ export default function AffairesSection() {
         }
       }
 
-      const affaireRes = await api.post("/api/affairejudiciaires/", {
+      const affaireRes = await api.post("affairejudiciaires/", {
         numero_dossier: numeroDossier,
         code_dossier: codeDossier,
         annee_dossier: anneeDossier,
@@ -473,7 +473,7 @@ export default function AffairesSection() {
           };
           console.log("Données à envoyer:", tribunalData);
 
-          await api.post("/api/affairetribunaux/", tribunalData);
+          await api.post("affairetribunaux/", tribunalData);
           console.log("Tribunal ajouté avec succès:", tribunalSelectionne.nom);
         } catch (tribunalErr) {
           console.error("Erreur lors de l'ajout du tribunal:", tribunalErr);
@@ -484,7 +484,7 @@ export default function AffairesSection() {
       }
 
       // Ajout du statut 'Enregistrée' par défaut
-      await api.post("/api/statutaffaires/", {
+      await api.post("statutaffaires/", {
         idaffaire: idaffaire,
         libellestatutaffaire: "Enregistrée",
         datedebut: new Date().toISOString().slice(0, 10),
@@ -517,7 +517,7 @@ export default function AffairesSection() {
     setError("");
 
     try {
-      await api.post("/api/statutaffaires/", {
+      await api.post("statutaffaires/", {
         idaffaire: statutEditId,
         libellestatutaffaire: newStatut,
         datedebut: new Date().toISOString().slice(0, 10),
@@ -567,7 +567,7 @@ export default function AffairesSection() {
   const avancerEtape = async (affaireId) => {
     try {
       const response = await api.post(
-        `/api/affaires/${affaireId}/avancer-etape/`,
+        `affaires/${affaireId}/avancer-etape/`,
       );
       getEtapeActuelle(affaireId);
       getProgression(affaireId);
@@ -580,7 +580,7 @@ export default function AffairesSection() {
   const terminerEtape = async (affaireId) => {
     try {
       const response = await api.post(
-        `/api/affaires/${affaireId}/terminer-etape/`,
+        `affaires/${affaireId}/terminer-etape/`,
       );
       getEtapeActuelle(affaireId);
       getProgression(affaireId);

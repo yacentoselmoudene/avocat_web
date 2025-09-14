@@ -21,7 +21,7 @@ export default function PasswordReset({ onBackToLogin }) {
     setLoading(true);
 
     try {
-      const response = await api.post("/api/password-reset-request/", {
+      const response = await api.post("password-reset-request/", {
         username: username,
       });
 
@@ -68,7 +68,7 @@ export default function PasswordReset({ onBackToLogin }) {
     setLoading(true);
 
     try {
-      const response = await api.post("/api/password-reset-confirm/", {
+      const response = await api.post("password-reset-confirm/", {
         uid: resetData.uid,
         token: resetData.token,
         new_password: newPassword,

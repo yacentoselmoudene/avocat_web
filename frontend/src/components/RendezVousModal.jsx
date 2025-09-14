@@ -100,9 +100,9 @@ const RendezVousModal = ({ affaire, rendezVous = null, isEdit = false, onClose, 
         rappel_1h: formData.rappel_1h
       };
       if (isEdit && rendezVous?.idaudience) {
-        await api.patch(`/api/audiences/${rendezVous.idaudience}/`, rendezVousData);
+        await api.patch(`audiences/${rendezVous.idaudience}/`, rendezVousData);
       } else {
-      await api.post('/api/audiences/', rendezVousData);
+      await api.post('audiences/', rendezVousData);
       }
       
       onSave();
