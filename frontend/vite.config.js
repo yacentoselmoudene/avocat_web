@@ -1,3 +1,4 @@
+// vite.config.js
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -8,11 +9,19 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    server: isDev ? {
-      proxy: {
-        "/api":   { target, changeOrigin: true, secure: false },
-        "/media": { target, changeOrigin: true, secure: false },
-      },
-    } : undefined,
+    base: "/",          // app servie à la racine du domaine
+    server: isDev
+      ? {
+          host: true,
+          proxy: {
+            "/api":   { target, changeOrigin: true, secure: false },
+            "/media": { target, changeOrigin: true, secure: false },
+          },
+        }
+      : undefined,      // ❗ aucun proxy en production
+    build: {
+      outDir: "dist",
+      sourcemap: false,
+    },
   };
 });

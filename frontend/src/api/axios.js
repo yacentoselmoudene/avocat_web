@@ -1,44 +1,39 @@
 // frontend/src/api/axios.js
 import axios from "axios";
 
-// utils
-const trimRight = (s) => (s || "").replace(/\/+$/, "");
-const trimLeft  = (s) => (s || "").replace(/^\/+/, "");
+const trim = (s) => (s || "").trim();
+const stripEdges = (s) => trim(s).replace(/^\/+|\/+$/g, ""); // remove leading+trailing '/'
 
-// Base URLs via .env (dev et prod)
-export const API_BASE   = trimRight(import.meta.env.VITE_API_URL || "/api");
-export const MEDIA_BASE = trimRight(import.meta.env.VITE_MEDIA_URL || "/media");
+const RAW_API_BASE   = import.meta.env.VITE_API_BASE   || "/api";
+const RAW_MEDIA_BASE = import.meta.env.VITE_MEDIA_BASE || "/media";
 
-// Parse le chemin de base (ex: '/api' ou '/api/v1') pour éviter les doublons
-const apiBaseURL = (() => {
-  try {
-    return new URL(API_BASE, window.location.origin);
-  } catch {
-    return new URL("/api", window.location.origin);
-  }
-})();
-const basePath = apiBaseURL.pathname.replace(/\/+$/, ""); // '/api' | '/api/v1' | ''
+// Normalise base: garde un trailing slash
+const API_BASE   = `/${stripEdges(RAW_API_BASE)}/`;     // ex: '/api/' ou '/api/api/'
+const MEDIA_BASE = `/${stripEdges(RAW_MEDIA_BASE)}/`;   // ex: '/media/'
+
+// pour détecter un préfixe en trop dans les URLs passées à axios
+const basePathNoSlash = stripEdges(RAW_API_BASE).toLowerCase(); // 'api' ou 'api/api'
 
 const api = axios.create({
-  // garde ce que tu as défini dans .env (ex: '/api')
   baseURL: API_BASE,
 });
 
-// Interceptor requêtes :
-// - si l'appel est relatif (pas http/https), garantir un leading '/'
-// - si l'URL commence déjà par le basePath (ex: '/api/...'), on le retire
-//   pour éviter 'baseURL(/api)' + 'url(/api/...)' => '/api/api/...'
+// Interceptor requêtes:
+// - Ignore les URLs absolues (http/https)
+// - Enlève les leading '/' pour que baseURL soit respecté
+// - Retire un éventuel doublon du préfixe (ex: 'api/clients/' quand base='/api/')
 api.interceptors.request.use((config) => {
-  // ne touche pas aux URLs absolues
-  const isAbsolute = /^https?:\/\//i.test(config.url || "");
-  if (!isAbsolute) {
-    let u = config.url || "/";
-    if (!u.startsWith("/")) u = `/${u}`;
-    if (basePath && u.startsWith(basePath + "/")) {
-      u = u.slice(basePath.length); // retire le '/api' en double
-    }
-    config.url = u;
+  const orig = config.url || "";
+  if (/^https?:\/\//i.test(orig)) return config; // absolu -> ne touche pas
+
+  let u = orig.replace(/^\/+/, ""); // enlève leading '/'
+
+  // si l'appel inclut déjà le préfixe base (ex: 'api/...' ou 'api/api/...'), on le retire
+  if (basePathNoSlash && u.toLowerCase().startsWith(basePathNoSlash + "/")) {
+    u = u.slice(basePathNoSlash.length + 1);
   }
+
+  config.url = u;
 
   // JWT
   const token = localStorage.getItem("token");
@@ -47,7 +42,7 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Interceptor réponses : 401 => logout
+// 401 -> logout
 api.interceptors.response.use(
   (r) => r,
   (err) => {
@@ -61,19 +56,20 @@ api.interceptors.response.use(
   }
 );
 
-// Helpers pour construire des URLs de fichiers (MEDIA)
-export const toAbsoluteUrl = (path) => {
+// Helpers media
+const toAbs = (path) => {
   if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
-  const joined = `/${trimLeft(path)}`;
-  return new URL(joined, window.location.origin).toString();
+  const clean = path.replace(/^\/+/, "");
+  return new URL(`/${clean}`, window.location.origin).toString();
 };
 
 export const mediaUrl = (fp) => {
   if (!fp) return "";
   if (/^https?:\/\//i.test(fp)) return fp;
-  if (fp.startsWith("/media/")) return toAbsoluteUrl(fp);
-  return toAbsoluteUrl(`${MEDIA_BASE}/${trimLeft(fp)}`);
+  const clean = fp.replace(/^\/+/, "");
+  if (clean.startsWith("media/")) return toAbs(clean);
+  return toAbs(`${stripEdges(MEDIA_BASE)}/${clean}`);
 };
 
 export default api;
