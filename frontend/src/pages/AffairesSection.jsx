@@ -537,7 +537,7 @@ export default function AffairesSection() {
   const getEtapeActuelle = async (affaireId) => {
     try {
       const response = await api.get(
-        `/api/affaires/${affaireId}/etape-actuelle/`,
+        `affaires/${affaireId}/etape-actuelle/`,
       );
       console.log("getEtapeActuelle - response:", response.data);
       setEtapesActuelles((prev) => ({
@@ -554,7 +554,7 @@ export default function AffairesSection() {
 
   const getProgression = async (affaireId) => {
     try {
-      const response = await api.get(`/api/affaires/${affaireId}/progression/`);
+      const response = await api.get(`affaires/${affaireId}/progression/`);
       setProgressions((prev) => ({
         ...prev,
         [affaireId]: response.data,
@@ -1956,7 +1956,7 @@ export default function AffairesSection() {
                         return;
                       try {
                         await api.delete(
-                          `/api/affairejudiciaires/${a.idaffaire}/`,
+                          `affairejudiciaires/${a.idaffaire}/`,
                         );
                         fetchAffaires();
                       } catch (err) {

@@ -82,7 +82,7 @@ export default function ConfigModal({ onClose }) {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const response = await api.get(`/api/${selectedTable.key}/`);
+        const response = await api.get(`${selectedTable.key}/`);
         setItems(response.data);
       } catch (error) {
         console.error(t("Erreur lors du chargement:"), error);
@@ -208,7 +208,7 @@ export default function ConfigModal({ onClose }) {
       console.log("Données envoyées:", dataToSend);
       await api.post(`${selectedTable.key}/`, dataToSend);
       setNewValue("");
-      const res = await api.get(`/api/${selectedTable.key}/`);
+      const res = await api.get(`${selectedTable.key}/`);
       setItems(res.data);
       setError("");
     } catch (err) {
@@ -252,7 +252,7 @@ export default function ConfigModal({ onClose }) {
       }
 
       console.log("ID de l'élément:", itemId);
-      console.log("URL:", `/api/${selectedTable.key}/${itemId}/`);
+      console.log("URL:", `${selectedTable.key}/${itemId}/`);
 
       const payload = { [selectedTable.field]: editValue };
       if (item.hasOwnProperty(`${selectedTable.field}_fr`)) {
@@ -262,9 +262,9 @@ export default function ConfigModal({ onClose }) {
         payload[`${selectedTable.field}_ar`] = editValue;
       }
 
-      await api.patch(`/api/${selectedTable.key}/${itemId}/`, payload);
+      await api.patch(`${selectedTable.key}/${itemId}/`, payload);
       setEditIndex(null);
-      const res = await api.get(`/api/${selectedTable.key}/`);
+      const res = await api.get(`${selectedTable.key}/`);
       setItems(res.data);
     } catch (err) {
       console.error("Erreur lors de la modification:", err);
@@ -298,8 +298,8 @@ export default function ConfigModal({ onClose }) {
         itemId = item.id || item[`id${selectedTable.key.slice(0, -1)}`];
       }
 
-      await api.delete(`/api/${selectedTable.key}/${itemId}/`);
-      const res = await api.get(`/api/${selectedTable.key}/`);
+      await api.delete(`${selectedTable.key}/${itemId}/`);
+      const res = await api.get(`${selectedTable.key}/`);
       setItems(res.data);
     } catch (err) {
       setError(

@@ -84,7 +84,7 @@ const AgendaPage = () => {
       // Charger l'affaire associée
       if (rendezVous.idaffaire) {
         const affaireResponse = await api.get(
-          `/api/affaires/${rendezVous.idaffaire}/`,
+          `affaires/${rendezVous.idaffaire}/`,
         );
         setSelectedAffaire(affaireResponse.data);
       } else {
@@ -108,7 +108,7 @@ const AgendaPage = () => {
     }
 
     try {
-      await api.delete(`/api/audiences/${rendezVous.idaudience}/`);
+      await api.delete(`audiences/${rendezVous.idaudience}/`);
       await loadRendezVous();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
@@ -118,7 +118,7 @@ const AgendaPage = () => {
 
   const handleConfirmRendezVous = async (rendezVous) => {
     try {
-      await api.patch(`/api/audiences/${rendezVous.idaudience}/`, {
+      await api.patch(`audiences/${rendezVous.idaudience}/`, {
         statut: "CONFIRME",
       });
       await loadRendezVous();
@@ -130,7 +130,7 @@ const AgendaPage = () => {
 
   const handleCancelRendezVous = async (rendezVous) => {
     try {
-      await api.patch(`/api/audiences/${rendezVous.idaudience}/`, {
+      await api.patch(`audiences/${rendezVous.idaudience}/`, {
         statut: "ANNULE",
       });
       await loadRendezVous();

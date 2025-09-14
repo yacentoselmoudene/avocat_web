@@ -413,7 +413,7 @@ export default function ClientsSection() {
   }
 
   const fetchClients = (searchTerm = "", typeFilter = "") => {
-    let url = "/api/clients/";
+    let url = "clients/";
     const params = new URLSearchParams();
     
     if (searchTerm) {
@@ -707,7 +707,7 @@ export default function ClientsSection() {
     )
       return;
     try {
-      const response = await api.delete(`/api/clients/${id}/`);
+      const response = await api.delete(`clients/${id}/`);
       fetchClients();
       setSuccess(t("Client supprimé avec succès !"));
       setTimeout(() => setSuccess(""), 3000);
