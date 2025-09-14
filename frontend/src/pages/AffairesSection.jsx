@@ -74,37 +74,37 @@ export default function AffairesSection() {
 
   const fetchAffaires = () => {
     api
-      .get("/api/affairejudiciaires/")
+      .get("affairejudiciaires/")
       .then((res) => setAffaires(res.data))
       .catch((err) => setError(err.message));
   };
   const fetchClients = () => {
     api
-      .get("/api/clients/")
+      .get("clients/")
       .then((res) => setClients(res.data))
       .catch(() => {});
   };
   const fetchStatuts = () => {
     api
-      .get("/api/statutaffaires/")
+      .get("statutaffaires/")
       .then((res) => setStatuts(res.data))
       .catch(() => {});
   };
   const fetchTypesClient = () => {
     api
-      .get("/api/typeclients/")
+      .get("typeclients/")
       .then((res) => setTypesClient(res.data))
       .catch(() => {});
   };
   const fetchTypesAffaire = () => {
     api
-      .get("/api/typeaffaires/")
+      .get("typeaffaires/")
       .then((res) => setTypesAffaire(res.data))
       .catch(() => {});
   };
   const fetchFonctions = () => {
     api
-      .get("/api/fonctionclients/")
+      .get("fonctionclients/")
       .then((res) => setFonctions(res.data))
       .catch(() => {});
   };
@@ -123,7 +123,7 @@ export default function AffairesSection() {
     }
     //appel api
     api
-      .get("/api/classification/", { params: { code: codeDossier } })
+      .get("classification/", { params: { code: codeDossier } })
       .then((res) => {
         const data = res.data;
         if (data.type) {
@@ -363,7 +363,7 @@ export default function AffairesSection() {
         );
         if (client) {
           //  si l'opposant existe deja : meme nom et email)
-          const oppRes = await api.get("/api/opposants/", {
+          const oppRes = await api.get("opposants/", {
             params: {
               nomopposant_fr: client.nomclient_fr,
               nomopposant_ar: client.nomclient_ar,
@@ -398,7 +398,7 @@ export default function AffairesSection() {
       if (typeAffaire) {
         try {
           //  si le type d'affaire existe
-          const typeRes = await api.get("/api/typeaffaires/", {
+          const typeRes = await api.get("typeaffaires/", {
             params: { libelletypeaffaire: typeAffaire },
           });
 

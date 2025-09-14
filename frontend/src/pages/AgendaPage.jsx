@@ -65,7 +65,7 @@ const AgendaPage = () => {
   const loadRendezVous = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/api/audiences/", {
+      const response = await api.get("audiences/", {
         params: {
           future_only: true,
         },

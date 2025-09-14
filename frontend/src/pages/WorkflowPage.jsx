@@ -151,7 +151,7 @@ const WorkflowPage = () => {
 
     const chargerAffaire = async () => {
       try {
-        const response = await api.get(`/api/affairejudiciaires/${affaireId}/`);
+        const response = await api.get(`affairejudiciaires/${affaireId}/`);
         setAffaireData(response.data);
 
         // detection affaire pénale
@@ -570,7 +570,7 @@ const WorkflowPage = () => {
 
   async function chargerTypesAvertissement() {
     try {
-      const response = await api.get("/api/types-avertissement/");
+      const response = await api.get("types-avertissement/");
       setTypesAvertissement(response.data);
     } catch (error) {
       console.error("Erreur chargement types avertissement:", error);
@@ -594,7 +594,7 @@ const WorkflowPage = () => {
   // types de demandes : ma9al
   async function chargerTypesDemande() {
     try {
-      const response = await api.get("/api/types-demande/");
+      const response = await api.get("types-demande/");
       setTypesDemande(response.data);
     } catch (error) {
       console.error("Erreur chargement types demande:", error);
@@ -619,7 +619,7 @@ const WorkflowPage = () => {
 
   async function chargerHuissiers() {
     try {
-      const response = await api.get("/api/huissiers-disponibles/");
+      const response = await api.get("huissiers-disponibles/");
       setHuissiers(response.data);
     } catch (error) {
       console.error("Erreur chargement huissiers:", error);
@@ -642,7 +642,7 @@ const WorkflowPage = () => {
   //opposants
   async function chargerOpposants() {
     try {
-      const response = await api.get("/api/opposants-disponibles/");
+      const response = await api.get("opposants-disponibles/");
       setOpposants(response.data);
     } catch (error) {
       console.error("Erreur chargement opposants:", error);
@@ -692,7 +692,7 @@ const WorkflowPage = () => {
   async function chargerFichiersEtape(etapeId) {
     try {
       const response = await api.get(
-        `/api/affaires/${affaireId}/etapes/${etapeId}/fichiers/`,
+        `affaires/${affaireId}/etapes/${etapeId}/fichiers/`,
       );
       return response.data;
     } catch (error) {
@@ -725,7 +725,7 @@ const WorkflowPage = () => {
   // Chargement des tribunaux pour l'audience
   async function chargerTribunaux() {
     try {
-      const response = await api.get("/api/tribunals/");
+      const response = await api.get("tribunals/");
       const tribunauxData = response.data;
       console.log("Tribunaux chargés:", tribunauxData);
       setTribunaux(tribunauxData);
@@ -785,7 +785,7 @@ const WorkflowPage = () => {
         "Chargement tribunaux appel avec type_affaire:",
         typeAffaireCode,
       );
-      const response = await api.get("/api/tribunaux-suggestion/", {
+      const response = await api.get("tribunaux-suggestion/", {
         params: {
           type_affaire: typeAffaireCode,
           mode_appel: "true", // Pour obtenir uniquement les cours d'appel
@@ -936,8 +936,8 @@ const WorkflowPage = () => {
     );
 
     try {
-      console.log(`🔍 DEBUG: Appel API /api/affaires/${affaireId}/etapes/`);
-      const response = await api.get(`/api/affaires/${affaireId}/etapes/`);
+      console.log(`🔍 DEBUG: Appel API affaires/${affaireId}/etapes/`);
+      const response = await api.get(`affaires/${affaireId}/etapes/`);
       console.log(`🔍 DEBUG: Réponse API reçue:`, response.data);
 
       if (response.data.etapes && response.data.etapes.length > 0) {
@@ -1028,7 +1028,7 @@ const WorkflowPage = () => {
   async function chargerParametresNotification() {
     try {
       const response = await api.get(
-        `/api/affaires/${affaireId}/notification-settings/`,
+        `affaires/${affaireId}/notification-settings/`,
       );
 
       if (response.status === 200 && response.data) {
@@ -1342,7 +1342,7 @@ const WorkflowPage = () => {
       console.log("Données envoyées au backend:", data);
       console.log(
         "URL appelée:",
-        `/api/affaires/${affaireId}/etapes/${etapeId}/completer/`,
+        `affaires/${affaireId}/etapes/${etapeId}/completer/`,
       );
 
       const response = await api.post(
@@ -1405,7 +1405,7 @@ const WorkflowPage = () => {
 
   const chargerExpertsPourEtape = async (index) => {
     try {
-      const response = await api.get("/api/experts/");
+      const response = await api.get("experts/");
       const experts = response.data;
       const expertSelect = document.getElementById(`expert-selection-${index}`);
 
@@ -1551,7 +1551,7 @@ const WorkflowPage = () => {
   window.supprimerTemoin = async (temoinElementId, temoinId) => {
     try {
       // Supprimer de la base de données
-      await api.delete(`/api/temoins/${temoinId}/`);
+      await api.delete(`temoins/${temoinId}/`);
 
       // Supprimer visuellement
       const element = document.getElementById(temoinElementId);
@@ -3607,7 +3607,7 @@ const EtapeItem = ({
 
       // Debug de l'URL de l'API
       const etapeId = etape.id || `etape_${index}`;
-      const apiUrl = `/api/affaires/${affaireId}/etapes/${etapeId}/completer/`;
+      const apiUrl = `affaires/${affaireId}/etapes/${etapeId}/completer/`;
       console.log("=== DEBUG APPEL API ===");
       console.log("Affaire ID:", affaireId);
       console.log("Étape ID:", etapeId);
@@ -3630,7 +3630,7 @@ const EtapeItem = ({
           // Vérifier si l'étape existe, sinon la créer
           let etapeExists = true;
           try {
-            await api.get(`/api/etapejudiciaires/${etapeId}/`);
+            await api.get(`etapejudiciaires/${etapeId}/`);
           } catch (etapeError) {
             if (etapeError.response && etapeError.response.status === 404) {
               etapeExists = false;
@@ -3657,7 +3657,7 @@ const EtapeItem = ({
           const getOrCreateTypeIntervention = async (libelleType) => {
             try {
               // D'abord essayer de récupérer le type existant
-              const typesResponse = await api.get("/api/typeinterventions/");
+              const typesResponse = await api.get("typeinterventions/");
               const existingType = typesResponse.data.find(
                 (t) =>
                   (t.libelletypeintervention || '').toLowerCase() ===
@@ -3716,7 +3716,7 @@ const EtapeItem = ({
           } else if (intervenant === "expert") {
             // Récupérer les experts disponibles
             try {
-              const expertsResponse = await api.get("/api/experts/");
+              const expertsResponse = await api.get("experts/");
               const experts = expertsResponse.data;
               console.log("Experts disponibles:", experts);
 

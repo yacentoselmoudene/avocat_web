@@ -439,7 +439,7 @@ export default function ClientsSection() {
   useEffect(() => {
     fetchClients();
     api
-      .get("/api/typeclients/")
+      .get("typeclients/")
       .then((res) => {
         console.log("Types récupérés:", res.data);
         setTypes(res.data);

@@ -96,7 +96,7 @@ export default function ConfigModal({ onClose }) {
     if (selectedTable.key === "tribunals") {
       const fetchTypeTribunaux = async () => {
         try {
-          const response = await api.get("/api/typetribunals/");
+          const response = await api.get("typetribunals/");
           setTypeTribunaux(response.data);
         } catch (error) {
           console.error("Erreur lors du chargement des types de tribunaux:", error);
@@ -364,7 +364,7 @@ export default function ConfigModal({ onClose }) {
       
 
       setShowTribunalForm(false);
-      const res = await api.get("/api/tribunals/");
+      const res = await api.get("tribunals/");
       setItems(res.data);
       setError("");
     } catch (err) {

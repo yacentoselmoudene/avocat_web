@@ -11,15 +11,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     //nombre de clients
-    api.get("/api/clients/")
+    api.get("clients/")
       .then(res => setNbClients(res.data.length))
       .catch(() => {});
     // nombre d'affaires
-    api.get("/api/affairejudiciaires/")
+    api.get("affairejudiciaires/")
       .then(res => setNbAffaires(res.data.length))
       .catch(() => {});
     // nombre de contrats
-    api.get("/api/contrats/")
+    api.get("contrats/")
       .then(res => setNbContrats(res.data.length))
       .catch(() => {});
   }, []);
