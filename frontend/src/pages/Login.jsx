@@ -16,7 +16,7 @@ export default function Login({ onLogin, onShowPasswordReset }) {
     setError("");
     setLoading(true);
     try {
-      const response = await api.post("/api/token/", { username, password });
+      const response = await api.post("token/", { username, password });
       localStorage.setItem("token", response.data.access);
       localStorage.setItem("refresh", response.data.refresh);
       localStorage.setItem("is_staff", response.data.is_staff);
