@@ -1,0 +1,56 @@
+INSERT INTO `type_affaire_principale`
+(id, code, libelle_fr, libelle_ar) VALUES
+(1,'1','Civil','المدني'),
+(2,'6','Civil','المدني'),
+(3,'2','Pénal','الجنائي'),
+(4,'3','Pénal','الجنائي'),
+(5,'4','Pénal','الجنائي'),
+(6,'7','Administratif','الإداري'),
+(7,'8','Commercial','التجاري');
+
+INSERT INTO `sous_type_affaire`
+(id, code, libelle_fr, libelle_ar, type_principale_id) VALUES
+(1,'1100','Institution du président et chambre de conseil','مؤسسة الرئيس وغرفة المشورة',1),
+(2,'1200','Civil','المدني',1),
+(3,'1300','Baux / Locations','الأكرية',1),
+(4,'1400','Immobilier / Foncier','العقار',1),
+(5,'1500','Social (travail)','الاجتماعي',1),
+(6,'1600','Statut personnel / Famille','الأحوال الشخصية',1),
+(7,'1700','Justice de proximité','قضاء القرب',1),
+
+(8,'2100','Codes des affaires pénales','رموز القضايا الزجرية',3),
+(9,'2200','Codes des affaires pénales','رموز القضايا الزجرية',3),
+(10,'2300','Codes des affaires pénales','رموز القضايا الزجرية',3),
+(11,'2400','Codes des affaires pénales','رموز القضايا الزجرية',3),
+(12,'2800','Codes des affaires pénales','رموز القضايا الزجرية',3),
+(13,'2900','Codes des affaires pénales','رموز القضايا الزجرية',3),
+
+(14,'3100','Codes des plaintes et procès-verbaux','رموز الشكايات والمحاضر',4),
+(15,'3200','Codes des plaintes et procès-verbaux','رموز الشكايات والمحاضر',4),
+
+(16,'4100','Codes des plaintes et procès-verbaux','رموز الشكايات والمحاضر',5),
+
+(17,'6100','Exécutions','تنفيذات',2),
+(18,'6150','Exécutions – Présidence','تنفيذات مؤسسة الرئيس',2),
+(19,'6200','Exécutions','تنفيذات',2),
+(20,'6250','Exécutions – Juridiction de la famille (625)','تنفيذات قضاء الأسرة (625)',2),
+(21,'6300','Exécutions – Commissions rogatoires émises et reçues (630)','تنفيذات إنابات صادرة وواردة (630)',2),
+(22,'6350','Exécutions – Juridiction de la famille, commissions rogatoires entrantes (635)','تنفيذات قضاء الأسرة إنابات واردة (635)',2),
+(23,'6500','Notifications','تبليغات',2),
+(24,'6600','Notifications','تبليغات',2),
+(25,'6700','Notifications','تبليغات',2),
+(26,'6800','Notifications','تبليغات',2),
+
+(27,'7100','Tribunaux administratifs','المحاكم الإدارية',6),
+(28,'7200','Cours d\'appel administratives','محاكم الاستئناف الإدارية',6),
+(29,'7300','Notification','التبليغ',6),
+(30,'7400','Exécution','التنفيذ',6),
+(31,'7500','Notification','التبليغ',6),
+(32,'7600','Exécution','التنفيذ',6),
+
+(33,'8100','Section des référés (Présidence)','شعبة الإستعجالي (مؤسسة الرئيس)',7),
+(34,'8200','Section du fond','شعبة الموضوع',7),
+(35,'8300','Section des difficultés des entreprises','شعبة صعوبات المقاولة',7),
+(36,'8400','Notifications','تبليغات',7),
+(37,'8500','Exécutions','تنفيذات',7);
+
