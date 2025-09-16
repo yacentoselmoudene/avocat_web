@@ -106,10 +106,10 @@ class LanguageMixin:
 def get_type_etape_by_etape_id(etape_id, phase=None, role=None):
     """Retourne le bon type d'étape selon l'ID et le contexte"""
     
-    print(f"🔍 DEBUG get_type_etape_by_etape_id: etape_id={etape_id}, phase={phase}, role={role}")
+    print(f"DEBUG get_type_etape_by_etape_id: etape_id={etape_id}, phase={phase}, role={role}")
     
     # DEBUG: Afficher tous les types d'étapes disponibles
-    print(f"🔍 DEBUG: Types d'étapes disponibles en base:")
+    print(f"DEBUG: Types d'étapes disponibles en base:")
     all_types = TypeEtape.objects.all().order_by('idtypeetape')
     for t in all_types:
         print(f"   ID {t.idtypeetape}: {t.libelletypeetape}")
@@ -154,68 +154,68 @@ def get_type_etape_by_etape_id(etape_id, phase=None, role=None):
     }
     
     try:
-        print(f"🔍 DEBUG: Vérification du mapping contextuel...")
+        print(f"DEBUG: Vérification du mapping contextuel...")
         # Si on a une phase et un rôle, utiliser le mapping contextuel
         if phase and role:
             context_key = f"{phase}_{role}"
-            print(f"🔍 DEBUG: context_key = {context_key}")
+            print(f"DEBUG: context_key = {context_key}")
             if context_key in mapping_etapes:
                 etape_mapping = mapping_etapes[context_key]
-                print(f"🔍 DEBUG: etape_mapping trouvé: {etape_mapping}")
+                print(f"DEBUG: etape_mapping trouvé: {etape_mapping}")
                 if etape_id in etape_mapping:
                     type_id = etape_mapping[etape_id]
-                    print(f"🔍 DEBUG: Type ID trouvé dans le mapping contextuel: {type_id}")
+                    print(f"DEBUG: Type ID trouvé dans le mapping contextuel: {type_id}")
                     return TypeEtape.objects.get(idtypeetape=type_id)
                 else:
-                    print(f"🔍 DEBUG: etape_id {etape_id} non trouvé dans le mapping contextuel")
+                    print(f"DEBUG: etape_id {etape_id} non trouvé dans le mapping contextuel")
             else:
-                print(f"🔍 DEBUG: context_key {context_key} non trouvé dans le mapping")
+                print(f"DEBUG: context_key {context_key} non trouvé dans le mapping")
         
-        print(f"🔍 DEBUG: Utilisation du mapping simple...")
+        print(f"DEBUG: Utilisation du mapping simple...")
         # Sinon, utiliser le mapping simple
         if etape_id in mapping_etapes:
             type_id = mapping_etapes[etape_id]
-            print(f"🔍 DEBUG: Type ID trouvé dans le mapping simple: {type_id}")
+            print(f"DEBUG: Type ID trouvé dans le mapping simple: {type_id}")
             return TypeEtape.objects.get(idtypeetape=type_id)
         else:
-            print(f"🔍 DEBUG: etape_id {etape_id} non trouvé dans le mapping simple")
+            print(f"DEBUG: etape_id {etape_id} non trouvé dans le mapping simple")
         
-        print(f"🔍 DEBUG: Fallback vers le premier type disponible...")
+        print(f"DEBUG: Fallback vers le premier type disponible...")
         # Fallback : premier type disponible
         fallback_type = TypeEtape.objects.first()
-        print(f"🔍 DEBUG: Type de fallback: {fallback_type}")
+        print(f"DEBUG: Type de fallback: {fallback_type}")
         if fallback_type:
             return fallback_type
         else:
-            print(f"❌ ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
+            print(f"ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
             return None
         
     except TypeEtape.DoesNotExist as e:
-        print(f"❌ Type d'étape non trouvé pour {etape_id}: {str(e)}")
+        print(f"Type d'étape non trouvé pour {etape_id}: {str(e)}")
         fallback_type = TypeEtape.objects.first()  # Fallback
-        print(f"🔍 DEBUG: Type de fallback après erreur: {fallback_type}")
+        print(f"DEBUG: Type de fallback après erreur: {fallback_type}")
         if fallback_type:
             return fallback_type
         else:
-            print(f"❌ ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
+            print(f"ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
             return None
     except Exception as e:
-        print(f"❌ Erreur inattendue dans get_type_etape_by_etape_id: {str(e)}")
+        print(f"Erreur inattendue dans get_type_etape_by_etape_id: {str(e)}")
         import traceback
-        print(f"❌ Traceback: {traceback.format_exc()}")
+        print(f"Traceback: {traceback.format_exc()}")
         fallback_type = TypeEtape.objects.first()  # Fallback
-        print(f"🔍 DEBUG: Type de fallback après erreur inattendue: {fallback_type}")
+        print(f"DEBUG: Type de fallback après erreur inattendue: {fallback_type}")
         if fallback_type:
             return fallback_type
         else:
-            print(f"❌ ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
+            print(f"ERREUR CRITIQUE: Aucun type d'étape disponible en base!")
             return None
 
 # Fonction de maintenance pour mettre à jour les étapes existantes sans type
 def update_existing_etapes_without_type():
     try:
         etapes_sans_type = Etapejudiciaire.objects.filter(idtypeetape__isnull=True)
-        print(f"🔄 Mise à jour de {etapes_sans_type.count()} étapes sans type...")
+        print(f"Mise à jour de {etapes_sans_type.count()} étapes sans type...")
         
         for etape in etapes_sans_type:
             try:
@@ -229,9 +229,9 @@ def update_existing_etapes_without_type():
                         if type_etape:
                             etape.idtypeetape = type_etape
                             etape.save()
-                            print(f"✅ Étape {etape.idetape} mise à jour avec type: {type_etape.libelletypeetape}")
+                            print(f"Étape {etape.idetape} mise à jour avec type: {type_etape.libelletypeetape}")
                         else:
-                            print(f"⚠️ Impossible de déterminer le type pour {etape.idetape}")
+                            print(f"Impossible de déterminer le type pour {etape.idetape}")
                 else:
                     # ID simple, essayer de le traiter comme un ordre
                     try:
@@ -240,19 +240,19 @@ def update_existing_etapes_without_type():
                         if type_etape:
                             etape.idtypeetape = type_etape
                             etape.save()
-                            print(f"✅ Étape {etape.idetape} mise à jour avec type: {type_etape.libelletypeetape}")
+                            print(f"Étape {etape.idetape} mise à jour avec type: {type_etape.libelletypeetape}")
                         else:
-                            print(f"⚠️ Impossible de déterminer le type pour {etape.idetape}")
+                            print(f"Impossible de déterminer le type pour {etape.idetape}")
                     except ValueError:
-                        print(f"⚠️ ID d'étape non numérique: {etape.idetape}")
+                        print(f"ID d'étape non numérique: {etape.idetape}")
                         
             except Exception as e:
-                print(f"❌ Erreur lors de la mise à jour de l'étape {etape.idetape}: {str(e)}")
+                print(f"Erreur lors de la mise à jour de l'étape {etape.idetape}: {str(e)}")
         
-        print(f"✅ Mise à jour terminée!")
+        print(f"Mise à jour terminée!")
         
     except Exception as e:
-        print(f"❌ Erreur lors de la mise à jour des étapes: {str(e)}")
+        print(f"Erreur lors de la mise à jour des étapes: {str(e)}")
 
 
 
@@ -355,21 +355,21 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
         
         # Client  (app mobile)
         if hasattr(user, 'client') and user.client:
-            print(f"🔍 Client connecté: {user.username} (ID: {user.client.idclient})")
+            print(f"Client connecté: {user.username} (ID: {user.client.idclient})")
             queryset = Affairejudiciaire.objects.filter(
                 idclient=user.client.idclient
             )
-            print(f"📊 Affaires trouvées pour le client: {queryset.count()}")
+            print(f"Affaires trouvées pour le client: {queryset.count()}")
             
         # Staff/Avocat  (app web)
         elif user.is_staff:
-            print(f"👨‍💼 Staff connecte: {user.username} - Acces a toutes les affaires".encode("utf-8", "ignore").decode())
+            print(f"Staff connecte: {user.username} - Acces a toutes les affaires".encode("utf-8", "ignore").decode())
             queryset = Affairejudiciaire.objects.all()
-            print(f"📊 Total affaires dans la base: {queryset.count()}")
+            print(f"Total affaires dans la base: {queryset.count()}")
             
         # Utilisateur non autorisé
         else:
-            print(f"❌ Utilisateur non autorisé: {user.username}")
+            print(f"Utilisateur non autorisé: {user.username}")
             queryset = Affairejudiciaire.objects.none()
         
         # Filtres additionnels
@@ -377,10 +377,10 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
         if statut:
             if statut == 'actives':
                 queryset = queryset.filter(datecloture__isnull=True)
-                print(f"🔍 Filtre 'actives' appliqué: {queryset.count()} affaires")
+                print(f"Filtre 'actives' appliqué: {queryset.count()} affaires")
             elif statut == 'terminees':
                 queryset = queryset.filter(datecloture__isnull=False)
-                print(f"🔍 Filtre 'terminees' appliqué: {queryset.count()} affaires")
+                print(f"Filtre 'terminees' appliqué: {queryset.count()} affaires")
         
         return queryset
 
@@ -447,7 +447,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
             client = user.client
             client_id = client.idclient
 
-            print(f"🔍 Statistiques demandées pour le client: {client.nomclient} (ID: {client_id})")
+            print(f"Statistiques demandées pour le client: {client.nomclient} (ID: {client_id})")
 
             #  Nombre d'affaires actives du client
             affaires_count = Affairejudiciaire.objects.filter(
@@ -455,7 +455,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 datecloture__isnull=True  # Affaires non clôturées
             ).count()
 
-            print(f"📊 Affaires actives trouvées: {affaires_count}")
+            print(f"Affaires actives trouvées: {affaires_count}")
 
             #  Prochaine audience du client
             affaires_client = Affairejudiciaire.objects.filter(
@@ -507,9 +507,9 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                         'statut': statut,
                         'description': description,
                     }
-                    print(f"📅 Prochaine audience trouvée: {prochaine_audience['date']}")
+                    print(f"Prochaine audience trouvée: {prochaine_audience['date']}")
                 else:
-                    print(f"📅 Aucune audience future trouvée")
+                    print(f"Aucune audience future trouvée")
 
             #  Statistiques des factures du client
             factures = Facture.objects.filter(idclient=client_id)
@@ -518,14 +518,14 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 total=Sum('montantfacture')
             )['total'] or 0.0
 
-            print(f"💰 Factures trouvées: {factures_count}, Montant total: {factures_total_montant}")
+            print(f"Factures trouvées: {factures_count}, Montant total: {factures_total_montant}")
 
             # Nombre de documents du client
             documents_count = Fichier.objects.filter(
                 affaire__in=affaires_client
             ).count()
 
-            print(f"📄 Documents trouvés: {documents_count}")
+            print(f"Documents trouvés: {documents_count}")
 
             # Résumé des statistiques
             statistics = {
@@ -555,11 +555,11 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 'timestamp': datetime.now().isoformat()
             }
 
-            print(f"✅ Statistiques générées avec succès pour le client {client_id}")
+            print(f"Statistiques générées avec succès pour le client {client_id}")
             return Response(statistics)
 
         except Exception as e:
-            print(f"❌ Erreur lors de la génération des statistiques: {str(e)}")
+            print(f"Erreur lors de la génération des statistiques: {str(e)}")
             return Response(
                 {'error': f'Erreur lors de la génération des statistiques: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -641,11 +641,11 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                 if etape_actuelle:
                     affaire.etape_actuelle = etape_actuelle
                     affaire.save()
-                    print(f"✅ Étape actuelle créée pour l'affaire {affaire.idaffaire}: {etape_actuelle.idtypeetape.libelletypeetape if etape_actuelle.idtypeetape else 'Sans type'}")
+                    print(f"Étape actuelle créée pour l'affaire {affaire.idaffaire}: {etape_actuelle.idtypeetape.libelletypeetape if etape_actuelle.idtypeetape else 'Sans type'}")
                 else:
-                    print(f"⚠️ Aucune étape actuelle créée pour l'affaire {affaire.idaffaire}")
+                    print(f"Aucune étape actuelle créée pour l'affaire {affaire.idaffaire}")
             except Exception as e:
-                print(f"❌ Erreur lors de la création de l'étape actuelle: {e}")
+                print(f"Erreur lors de la création de l'étape actuelle: {e}")
             
             headers = self.get_success_headers(serializer.data)
             return Response(self.get_serializer(affaire).data, status=status.HTTP_201_CREATED, headers=headers)
@@ -847,21 +847,21 @@ class AudienceViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
         try:
-            print("\n🟦 DEBUG RDV: payload reçu:", dict(request.data))
-            print("🟦 DEBUG RDV: payload normalisé:", dict(data))
+            print("\nDEBUG RDV: payload reçu:", dict(request.data))
+            print("DEBUG RDV: payload normalisé:", dict(data))
             serializer = self.get_serializer(data=data)
             if not serializer.is_valid():
-                print("🟥 DEBUG RDV: erreurs de validation:", serializer.errors)
+                print("DEBUG RDV: erreurs de validation:", serializer.errors)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
             self.perform_create(serializer)
             headers = self.get_success_headers(serializer.data)
-            print("🟩 DEBUG RDV: création OK, idaudience:", serializer.data.get('idaudience'))
+            print("DEBUG RDV: création OK, idaudience:", serializer.data.get('idaudience'))
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
         except ValidationError as ve:
-            print("🟥 DEBUG RDV: ValidationError levée:", getattr(ve, 'detail', str(ve)))
+            print("DEBUG RDV: ValidationError levée:", getattr(ve, 'detail', str(ve)))
             raise
         except Exception as e:
-            print("🟥 DEBUG RDV: exception inattendue:", str(e))
+            print("DEBUG RDV: exception inattendue:", str(e))
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
     def get_queryset(self):
@@ -1047,21 +1047,21 @@ class ContratViewSet(viewsets.ModelViewSet):
         
         # Client connecté
         if hasattr(user, 'client') and user.client:
-            print(f"🔍 Client connecté: {user.username} (ID: {user.client.idclient})")
+            print(f"Client connecté: {user.username} (ID: {user.client.idclient})")
             queryset = Contrat.objects.filter(
                 idclient=user.client.idclient
             )
-            print(f"📄 Contrats trouvés pour le client: {queryset.count()}")
+            print(f"Contrats trouvés pour le client: {queryset.count()}")
             
         # Staff/Avocat connecté
         elif user.is_staff:
-            print(f"👨‍💼 Staff connecte: {user.username} - Acces a tous les contrats".encode("ascii", "ignore").decode())
+            print(f"Staff connecte: {user.username} - Acces a tous les contrats".encode("ascii", "ignore").decode())
             queryset = Contrat.objects.all()
-            print(f"📄 Total contrats dans la base: {queryset.count()}")
+            print(f"Total contrats dans la base: {queryset.count()}")
             
         # Utilisateur non autorisé
         else:
-            print(f"❌ Utilisateur non autorisé: {user.username}")
+            print(f"Utilisateur non autorisé: {user.username}")
             queryset = Contrat.objects.none()
         
         return queryset
@@ -1435,7 +1435,7 @@ def affaire_etape_actuelle(request, affaire_id):
         #  Chercher l'étape actuelle assignée à l'affaire
         if hasattr(affaire, 'etape_actuelle') and affaire.etape_actuelle:
             etape_actuelle = affaire.etape_actuelle
-            print(f"✅ Étape actuelle trouvée dans l'affaire: {etape_actuelle.idetape}")
+            print(f"Étape actuelle trouvée dans l'affaire: {etape_actuelle.idetape}")
         
         # 2. Si pas d'étape assignée, chercher la première étape non terminée
         if not etape_actuelle:
@@ -1445,13 +1445,13 @@ def affaire_etape_actuelle(request, affaire_id):
             ).order_by('ordre_etape').first()
             
             if etape_actuelle:
-                print(f"✅ Étape actuelle trouvée (première non terminée): {etape_actuelle.idetape}")
+                print(f"Étape actuelle trouvée (première non terminée): {etape_actuelle.idetape}")
         
         # 3. Si toujours pas d'étape, utiliser la logique par défaut
         if not etape_actuelle:
             etape_actuelle = get_etape_actuelle_par_phase(affaire)
             if etape_actuelle:
-                print(f"✅ Étape actuelle trouvée par logique: {etape_actuelle.idetape}")
+                print(f"Étape actuelle trouvée par logique: {etape_actuelle.idetape}")
 
         if not etape_actuelle:
             return Response({
@@ -1894,9 +1894,9 @@ def completer_etape(request, affaire_id, etape_id):
         # 1. Essayer de trouver l'étape par ID exact
         try:
             etape = Etapejudiciaire.objects.get(idetape=etape_id, idaffaire=affaire)
-            print(f"✅ Étape existante trouvée par ID exact: {etape.idetape}")
+            print(f"Étape existante trouvée par ID exact: {etape.idetape}")
         except Etapejudiciaire.DoesNotExist:
-            print(f"ℹ️ Étape {etape_id} non trouvée par ID exact, recherche par pattern...")
+            print(f"Étape {etape_id} non trouvée par ID exact, recherche par pattern...")
             
             # 2. Essayer de trouver par pattern (etape_X_affaire_Y_hash)
             if '_' in str(etape_id):
@@ -1906,9 +1906,9 @@ def completer_etape(request, affaire_id, etape_id):
                         idaffaire=affaire
                     ).first()
                     if etape:
-                        print(f"✅ Étape trouvée par pattern: {etape.idetape}")
+                        print(f"Étape trouvée par pattern: {etape.idetape}")
                 except Exception as e:
-                    print(f"⚠️ Erreur lors de la recherche par pattern: {str(e)}")
+                    print(f"Erreur lors de la recherche par pattern: {str(e)}")
             
             # 3. Si toujours pas trouvée, essayer par ordre d'étape
             if not etape:
@@ -1919,45 +1919,45 @@ def completer_etape(request, affaire_id, etape_id):
                         ordre_etape=ordre
                     ).first()
                     if etape:
-                        print(f"✅ Étape trouvée par ordre: {etape.idetape} (ordre: {ordre})")
+                        print(f"Étape trouvée par ordre: {etape.idetape} (ordre: {ordre})")
                 except (ValueError, IndexError):
-                    print(f"ℹ️ Impossible de déterminer l'ordre pour {etape_id}")
+                    print(f"Impossible de déterminer l'ordre pour {etape_id}")
         
         # Si l'étape existe, la mettre à jour
         if etape:
-            print(f"🔄 Mise à jour de l'étape existante: {etape.idetape}")
+            print(f"Mise à jour de l'étape existante: {etape.idetape}")
             
             # Mettre à jour les données de l'étape existante
             if delai_final is not None:
                 etape.delai_legal = delai_final
-                print(f"✅ Délai légal mis à jour: {etape.delai_legal}")
+                print(f"Délai légal mis à jour: {etape.delai_legal}")
             
             if type_avertissement_id:
                 try:
                     type_avertissement = TypeAvertissement.objects.get(idtypeavertissement=type_avertissement_id)
                     etape.idtypeavertissement = type_avertissement
-                    print(f"✅ Type avertissement mis à jour: {type_avertissement.libelle_fr or type_avertissement.libelle_ar or ''}")
+                    print(f"Type avertissement mis à jour: {type_avertissement.libelle_fr or type_avertissement.libelle_ar or ''}")
                 except TypeAvertissement.DoesNotExist:
-                    print(f"⚠️ Type avertissement {type_avertissement_id} non trouvé")
+                    print(f"Type avertissement {type_avertissement_id} non trouvé")
             
             if type_demande_id:
                 try:
                     type_demande = TypeDemande.objects.get(idtypedemande=type_demande_id)
                     etape.idtypedemande = type_demande
-                    print(f"✅ Type demande mis à jour: {type_demande.libelle_fr or type_demande.libelle_ar or ''}")
+                    print(f"Type demande mis à jour: {type_demande.libelle_fr or type_demande.libelle_ar or ''}")
                 except TypeDemande.DoesNotExist:
-                    print(f"⚠️ Type demande {type_demande_id} non trouvé")
+                    print(f"Type demande {type_demande_id} non trouvé")
             
             # NOUVEAU : S'assurer que l'étape a un type valide
             if not etape.idtypeetape:
-                print(f"⚠️ Étape sans type, assignation d'un type par défaut...")
+                print(f"Étape sans type, assignation d'un type par défaut...")
                 type_etape_defaut = get_type_etape_by_etape_id(etape_id)
                 if type_etape_defaut:
                     etape.idtypeetape = type_etape_defaut
-                    print(f"✅ Type d'étape assigné: {type_etape_defaut.libelletypeetape}")
+                    print(f"Type d'étape assigné: {type_etape_defaut.libelletypeetape}")
             
             etape.save()
-            print(f"✅ Étape existante mise à jour avec succès")
+            print(f"Étape existante mise à jour avec succès")
             
         else:
             # Créer une nouvelle étape
@@ -1981,14 +1981,14 @@ def completer_etape(request, affaire_id, etape_id):
             from .services import get_role_client_from_fonction
             role_client = get_role_client_from_fonction(affaire)
             
-            print(f"🔍 DEBUG: is_affaire_penale = {is_affaire_penale}")
-            print(f"🔍 DEBUG: role_client = {role_client}")
-            print(f"🔍 DEBUG: etape_id = {etape_id}")
+            print(f"DEBUG: is_affaire_penale = {is_affaire_penale}")
+            print(f"DEBUG: role_client = {role_client}")
+            print(f"DEBUG: etape_id = {etape_id}")
             
             # Déterminer la phase selon les données reçues
             phase = "INITIALE"  # Par défaut
             
-            print(f"🔍 DEBUG: Appel get_type_etape_by_etape_id avec phase={phase}, role={role_client}")
+            print(f"DEBUG: Appel get_type_etape_by_etape_id avec phase={phase}, role={role_client}")
             
             # NOUVELLE LOGIQUE: Utiliser la logique unifiée pour déterminer le type d'étape
             from .services import get_etapes_phase_initiale, get_etapes_phase_procedure
@@ -1997,40 +1997,40 @@ def completer_etape(request, affaire_id, etape_id):
             
             # Déterminer la phase de l'affaire
             affaire_phase = getattr(affaire, 'phase_processus', 'INITIALE')
-            print(f"🔍 DEBUG: Phase de l'affaire: {affaire_phase}")
-            print(f"🔍 DEBUG: Début de la logique de mapping pour etape_id: {etape_id}")
+            print(f"DEBUG: Phase de l'affaire: {affaire_phase}")
+            print(f"DEBUG: Début de la logique de mapping pour etape_id: {etape_id}")
             
             if affaire_phase == 'INITIALE':
-                print(f"🔍 DEBUG: Phase INITIALE détectée")
+                print(f"DEBUG: Phase INITIALE détectée")
                 etapes_phase = get_etapes_phase_initiale(affaire)
-                print(f"🔍 DEBUG: Étapes phase initiale: {etapes_phase}")
-                print(f"🔍 DEBUG: Nombre d'étapes: {len(etapes_phase)}")
+                print(f"DEBUG: Étapes phase initiale: {etapes_phase}")
+                print(f"DEBUG: Nombre d'étapes: {len(etapes_phase)}")
                 
                 # Chercher l'étape correspondante
                 if etape_id.startswith('etape_'):
                     try:
                         index = int(etape_id.split('_')[1])
-                        print(f"🔍 DEBUG: Index extrait: {index}")
+                        print(f"DEBUG: Index extrait: {index}")
                         if index < len(etapes_phase):
                             libelle_etape = etapes_phase[index]['libelle_ar']
-                            print(f"🔍 DEBUG: Libellé étape trouvé: {libelle_etape}")
+                            print(f"DEBUG: Libellé étape trouvé: {libelle_etape}")
                             
                             # Chercher le type d'étape correspondant
                             type_etape = TypeEtape.objects.filter(libelletypeetape=libelle_etape).first()
                             if type_etape:
-                                print(f"✅ Type d'étape trouvé: {type_etape.idtypeetape} - {type_etape.libelletypeetape}")
+                                print(f"Type d'étape trouvé: {type_etape.idtypeetape} - {type_etape.libelletypeetape}")
                             else:
-                                print(f"❌ Type d'étape non trouvé pour: {libelle_etape}")
+                                print(f"Type d'étape non trouvé pour: {libelle_etape}")
                         else:
-                            print(f"❌ Index {index} hors limites (max: {len(etapes_phase)-1})")
+                            print(f"Index {index} hors limites (max: {len(etapes_phase)-1})")
                     except (ValueError, IndexError) as e:
-                        print(f"❌ Impossible de déterminer l'index pour: {etape_id} - Erreur: {str(e)}")
+                        print(f"Impossible de déterminer l'index pour: {etape_id} - Erreur: {str(e)}")
                 else:
-                    print(f"❌ etape_id ne commence pas par 'etape_': {etape_id}")
+                    print(f"etape_id ne commence pas par 'etape_': {etape_id}")
             
             elif affaire_phase == 'PROCEDURE':
                 etapes_phase = get_etapes_phase_procedure(affaire)
-                print(f"🔍 DEBUG: Étapes phase procédure: {etapes_phase}")
+                print(f"DEBUG: Étapes phase procédure: {etapes_phase}")
                 
                 # Chercher l'étape correspondante
                 if etape_id.startswith('etape_'):
@@ -2038,49 +2038,49 @@ def completer_etape(request, affaire_id, etape_id):
                         index = int(etape_id.split('_')[1])
                         if index < len(etapes_phase):
                             libelle_etape = etapes_phase[index][0]  # Format tuple (libelle, delai)
-                            print(f"🔍 DEBUG: Libellé étape trouvé: {libelle_etape}")
+                            print(f"DEBUG: Libellé étape trouvé: {libelle_etape}")
                             
                             # Chercher le type d'étape correspondant
                             type_etape = TypeEtape.objects.filter(libelletypeetape=libelle_etape).first()
                             if type_etape:
-                                print(f"✅ Type d'étape trouvé: {type_etape.idtypeetape} - {type_etape.libelletypeetape}")
+                                print(f"Type d'étape trouvé: {type_etape.idtypeetape} - {type_etape.libelletypeetape}")
                             else:
-                                print(f"❌ Type d'étape non trouvé pour: {libelle_etape}")
+                                print(f"Type d'étape non trouvé pour: {libelle_etape}")
                     except (ValueError, IndexError):
-                        print(f"❌ Impossible de déterminer l'index pour: {etape_id}")
+                        print(f"Impossible de déterminer l'index pour: {etape_id}")
             
             # Fallback vers l'ancienne méthode si pas trouvé
             if not type_etape:
-                print(f"🔍 DEBUG: Fallback vers get_type_etape_by_etape_id")
+                print(f"DEBUG: Fallback vers get_type_etape_by_etape_id")
                 type_etape = get_type_etape_by_etape_id(etape_id, phase, role_client)
             
-            print(f"🔍 DEBUG: type_etape = {type_etape}")
+            print(f"DEBUG: type_etape = {type_etape}")
             print(f"Type d'étape assigné: {type_etape.libelletypeetape if type_etape else 'Aucun'}")
             
             # Vérifier que le type d'étape existe bien en base
             if type_etape:
                 try:
                     type_etape_verifie = TypeEtape.objects.get(idtypeetape=type_etape.idtypeetape)
-                    print(f"✅ Type d'étape vérifié en base: {type_etape_verifie.idtypeetape} - {type_etape_verifie.libelletypeetape}")
+                    print(f"Type d'étape vérifié en base: {type_etape_verifie.idtypeetape} - {type_etape_verifie.libelletypeetape}")
                 except TypeEtape.DoesNotExist:
-                    print(f"❌ ERREUR: Type d'étape {type_etape.idtypeetape} n'existe pas en base!")
+                    print(f"ERREUR: Type d'étape {type_etape.idtypeetape} n'existe pas en base!")
                     # Essayer de récupérer un type par défaut
                     type_etape_defaut = TypeEtape.objects.first()
                     if type_etape_defaut:
                         type_etape = type_etape_defaut
-                        print(f"✅ Type d'étape par défaut assigné: {type_etape.libelletypeetape}")
+                        print(f"Type d'étape par défaut assigné: {type_etape.libelletypeetape}")
                     else:
-                        print(f"❌ Aucun type d'étape disponible en base!")
+                        print(f"Aucun type d'étape disponible en base!")
                         return Response({'error': 'Aucun type d\'étape disponible en base de données'}, status=400)
             else:
-                print(f"❌ ERREUR: Aucun type d'étape trouvé pour {etape_id}")
+                print(f"ERREUR: Aucun type d'étape trouvé pour {etape_id}")
                 # Essayer de récupérer un type par défaut
                 type_etape_defaut = TypeEtape.objects.first()
                 if type_etape_defaut:
                     type_etape = type_etape_defaut
-                    print(f"✅ Type d'étape par défaut assigné: {type_etape.libelletypeetape}")
+                    print(f"Type d'étape par défaut assigné: {type_etape.libelletypeetape}")
                 else:
-                    print(f"❌ Aucun type d'étape disponible en base!")
+                    print(f"Aucun type d'étape disponible en base!")
                     return Response({'error': 'Aucun type d\'étape disponible en base de données'}, status=400)
             
             # Préparer les données pour la création d'étape
@@ -2122,38 +2122,38 @@ def completer_etape(request, affaire_id, etape_id):
             
             # NOUVEAU : Vérifier que l'étape a un type valide avant de la créer
             if not etape_data.get('idtypeetape'):
-                print(f"⚠️ ATTENTION: L'étape n'a pas de type d'étape assigné!")
+                print(f"ATTENTION: L'étape n'a pas de type d'étape assigné!")
                 # Essayer de récupérer un type par défaut
                 try:
                     type_etape_defaut = TypeEtape.objects.first()
                     if type_etape_defaut:
                         etape_data['idtypeetape'] = type_etape_defaut
-                        print(f"✅ Type d'étape par défaut assigné: {type_etape_defaut.libelletypeetape}")
+                        print(f"Type d'étape par défaut assigné: {type_etape_defaut.libelletypeetape}")
                     else:
-                        print(f"❌ Aucun type d'étape disponible en base!")
+                        print(f"Aucun type d'étape disponible en base!")
                         return Response({'error': 'Aucun type d\'étape disponible en base de données'}, status=400)
                 except Exception as e:
-                    print(f"❌ Erreur lors de la récupération du type d'étape par défaut: {str(e)}")
+                    print(f"Erreur lors de la récupération du type d'étape par défaut: {str(e)}")
                     return Response({'error': f'Erreur lors de la récupération du type d\'étape: {str(e)}'}, status=400)
             
             # Vérification supplémentaire avant création
             if not etape_data.get('idtypeetape'):
-                print(f"❌ ERREUR CRITIQUE: Impossible d'assigner un type d'étape!")
+                print(f"ERREUR CRITIQUE: Impossible d'assigner un type d'étape!")
                 return Response({'error': 'Impossible d\'assigner un type d\'étape à cette étape'}, status=400)
             
-            print(f"🔍 DEBUG: Tentative de création de l'étape avec les données: {etape_data}")
+            print(f"DEBUG: Tentative de création de l'étape avec les données: {etape_data}")
             try:
                 etape = Etapejudiciaire.objects.create(**etape_data)
-                print(f"✅ Étape créée avec succès: {etape.idetape}")
+                print(f"Étape créée avec succès: {etape.idetape}")
             except Exception as e:
-                print(f"❌ ERREUR lors de la création de l'étape: {str(e)}")
-                print(f"❌ Traceback complet:")
+                print(f"ERREUR lors de la création de l'étape: {str(e)}")
+                print(f"Traceback complet:")
                 import traceback
                 print(traceback.format_exc())
                 return Response({'error': f'Erreur lors de la création de l\'étape: {str(e)}'}, status=400)
-            print(f"✅ Type d'étape: {etape.idtypeetape.libelletypeetape if etape.idtypeetape else 'Aucun'}")
-            print(f"✅ Délai légal: {etape.delai_legal}")
-            print(f"✅ Type avertissement: {etape.idtypeavertissement}")
+            print(f"Type d'étape: {etape.idtypeetape.libelletypeetape if etape.idtypeetape else 'Aucun'}")
+            print(f"Délai légal: {etape.delai_legal}")
+            print(f"Type avertissement: {etape.idtypeavertissement}")
         
         observations = request.data.get('observations', '')
         # Saisie libre du nom de l'avocat du demandeur; on le stocke au niveau de l'affaire
@@ -2185,33 +2185,33 @@ def completer_etape(request, affaire_id, etape_id):
             (execution_faite or date_execution or type_execution)  # Phase EXECUTION
         )
         
-        print(f"🔍 DEBUG: autorite = '{autorite}'")
-        print(f"🔍 DEBUG: type_action = '{type_action}'")
-        print(f"🔍 DEBUG: execution_faite = '{execution_faite}'")
-        print(f"🔍 DEBUG: date_execution = '{date_execution}'")
-        print(f"🔍 DEBUG: type_execution = '{type_execution}'")
-        print(f"🔍 DEBUG: observations_defense = '{observations_defense}'")
-        print(f"🔍 DEBUG: jugement = '{jugement}'")
-        print(f"🔍 DEBUG: is_etape_penale = {is_etape_penale}")
+        print(f"DEBUG: autorite = '{autorite}'")
+        print(f"DEBUG: type_action = '{type_action}'")
+        print(f"DEBUG: execution_faite = '{execution_faite}'")
+        print(f"DEBUG: date_execution = '{date_execution}'")
+        print(f"DEBUG: type_execution = '{type_execution}'")
+        print(f"DEBUG: observations_defense = '{observations_defense}'")
+        print(f"DEBUG: jugement = '{jugement}'")
+        print(f"DEBUG: is_etape_penale = {is_etape_penale}")
         
         if is_etape_penale:
-            print(f"✅ Traitement des données pénales")
+            print(f"Traitement des données pénales")
             # Validation des choix pénaux (seulement si phase INITIALE)
             if autorite and type_action:
                 autorites_valides = [choice[0] for choice in AUTORITES_EMETTRICES]
                 types_valides = [choice[0] for choice in TYPES_ACTION_PENALE]
                 
-                print(f"✅ Autorité reçue: '{autorite}'")
-                print(f"✅ Type action reçu: '{type_action}'")
-                print(f"✅ Autorités valides: {autorites_valides}")
-                print(f"✅ Types valides: {types_valides}")
+                print(f"Autorité reçue: '{autorite}'")
+                print(f"Type action reçu: '{type_action}'")
+                print(f"Autorités valides: {autorites_valides}")
+                print(f"Types valides: {types_valides}")
                 
                 if autorite not in autorites_valides:
-                    print(f"❌ Autorité invalide: '{autorite}'")
+                    print(f"Autorité invalide: '{autorite}'")
                     return Response({'error': f'Autorité émettrice invalide: {autorite}'}, status=400)
                 
                 if type_action not in types_valides:
-                    print(f"❌ Type action invalide: '{type_action}'")
+                    print(f"Type action invalide: '{type_action}'")
                     return Response({'error': f'Type d\'action pénale invalide: {type_action}'}, status=400)
             
             # Validation du jugement si fourni
@@ -2219,7 +2219,7 @@ def completer_etape(request, affaire_id, etape_id):
             if jugement:
                 jugements_valides = [choice[0] for choice in TYPES_JUGEMENT]
                 if jugement not in jugements_valides:
-                    print(f"❌ Jugement invalide: '{jugement}'")
+                    print(f"Jugement invalide: '{jugement}'")
                     return Response({'error': f'Jugement invalide: {jugement}'}, status=400)
             
             # Validation du type d'exécution si fourni
@@ -2227,26 +2227,26 @@ def completer_etape(request, affaire_id, etape_id):
             if type_execution:
                 types_execution_valides = [choice[0] for choice in TYPES_EXECUTION]
                 if type_execution not in types_execution_valides:
-                    print(f"❌ Type d'exécution invalide: '{type_execution}'")
+                    print(f"Type d'exécution invalide: '{type_execution}'")
                     return Response({'error': f'Type d\'exécution invalide: {type_execution}'}, status=400)
             
-            print(f"✅ Validation réussie, traitement des données...")
+            print(f"Validation réussie, traitement des données...")
             
             # Récupérer les fichiers PDF si fournis
             convocation_pdf = request.FILES.get('convocation_pdf') if request.FILES else None
             documents_defense = request.FILES.get('documents_defense') if request.FILES else None
             document_execution = request.FILES.get('document_execution') if request.FILES else None
-            print(f"✅ Fichier convocation PDF reçu: {convocation_pdf}")
-            print(f"✅ Fichier documents défense PDF reçu: {documents_defense}")
-            print(f"✅ Fichier document exécution PDF reçu: {document_execution}")
+            print(f"Fichier convocation PDF reçu: {convocation_pdf}")
+            print(f"Fichier documents défense PDF reçu: {documents_defense}")
+            print(f"Fichier document exécution PDF reçu: {document_execution}")
             
             # DEBUG : Vérifier si on est dans une étape d'exécution
             execution_faite = request.data.get('execution_faite')
             date_execution = request.data.get('date_execution')
-            print(f"🔍 DEBUG: execution_faite = {execution_faite}")
-            print(f"🔍 DEBUG: date_execution = {date_execution}")
-            print(f"🔍 DEBUG: documents_defense présent = {documents_defense is not None}")
-            print(f"🔍 DEBUG: document_execution présent = {document_execution is not None}")
+            print(f"DEBUG: execution_faite = {execution_faite}")
+            print(f"DEBUG: date_execution = {date_execution}")
+            print(f"DEBUG: documents_defense présent = {documents_defense is not None}")
+            print(f"DEBUG: document_execution présent = {document_execution is not None}")
             
             # Encoder les données pénale dans les champs existants
             donnees_penales = {
@@ -2267,13 +2267,13 @@ def completer_etape(request, affaire_id, etape_id):
                 "type_execution": request.data.get('type_execution', ''),
                 "date_creation": str(date.today())
             }
-            print(f"✅ Données pénales préparées: {donnees_penales}")
+            print(f"Données pénales préparées: {donnees_penales}")
             
             try:
                 import json
                 # Stocker dans description_etape (champ existant)
                 etape.description_etape = json.dumps(donnees_penales, ensure_ascii=False)
-                print(f"✅ Données pénales stockées dans description_etape: {etape.description_etape}")
+                print(f"Données pénales stockées dans description_etape: {etape.description_etape}")
                 
                 # Stocker les métadonnées dans documents_requis (champ existant)
                 metadonnees = {
@@ -2283,12 +2283,12 @@ def completer_etape(request, affaire_id, etape_id):
                     "audition_statut": "FAITE" if request.data.get('audition_police_faite') else "NON_FAITE"
                 }
                 etape.documents_requis = json.dumps(metadonnees, ensure_ascii=False)
-                print(f"✅ Métadonnées stockées dans documents_requis: {etape.documents_requis}")
+                print(f"Métadonnées stockées dans documents_requis: {etape.documents_requis}")
                 
                 # Mettre à jour la date de début si fournie
                 if request.data.get('date_convocation_arrestation'):
                     etape.datedebut = request.data.get('date_convocation_arrestation')
-                    print(f"✅ Date de début mise à jour: {etape.datedebut}")
+                    print(f"Date de début mise à jour: {etape.datedebut}")
                 
                 # Stocker les observations dans le champ observations_etape
                 observations_penales = request.data.get('observations_penales', '')
@@ -2299,16 +2299,16 @@ def completer_etape(request, affaire_id, etape_id):
                 # Priorité aux observations d'exécution si elles existent
                 if observations_execution:
                     etape.observations_etape = observations_execution
-                    print(f"✅ Observations exécution sauvegardées dans observations_etape: {observations_execution}")
+                    print(f"Observations exécution sauvegardées dans observations_etape: {observations_execution}")
                 elif motif_non_execution:
                     etape.observations_etape = motif_non_execution
-                    print(f"✅ Motif non-exécution sauvegardé dans observations_etape: {motif_non_execution}")
+                    print(f"Motif non-exécution sauvegardé dans observations_etape: {motif_non_execution}")
                 elif observations_defense:
                     etape.observations_etape = observations_defense
-                    print(f"✅ Observations défense sauvegardées dans observations_etape: {observations_defense}")
+                    print(f"Observations défense sauvegardées dans observations_etape: {observations_defense}")
                 elif observations_penales:
                     etape.observations_etape = observations_penales
-                    print(f"✅ Observations pénale sauvegardées dans observations_etape: {observations_penales}")
+                    print(f"Observations pénale sauvegardées dans observations_etape: {observations_penales}")
                 
                 # Gérer l'upload du fichier PDF de convocation/arrestation
                 if convocation_pdf:
@@ -2337,14 +2337,14 @@ def completer_etape(request, affaire_id, etape_id):
                         
                         # Ajouter le nom du fichier aux données JSON
                         donnees_penales["fichier_pdf"] = filename
-                        print(f"✅ Fichier convocation PDF sauvegardé: {filename}")
+                        print(f"Fichier convocation PDF sauvegardé: {filename}")
                         
                     except Exception as e:
-                        print(f"❌ Erreur lors de la sauvegarde du fichier convocation PDF: {str(e)}")
+                        print(f"Erreur lors de la sauvegarde du fichier convocation PDF: {str(e)}")
                 
                 # Gérer l'upload du fichier PDF de documents de défense
                 if documents_defense:
-                    print(f"🔍 DEBUG: documents_defense détecté: {documents_defense.name}")
+                    print(f"DEBUG: documents_defense détecté: {documents_defense.name}")
                     try:
                         import uuid
                         file_extension = documents_defense.name.split('.')[-1]
@@ -2353,13 +2353,13 @@ def completer_etape(request, affaire_id, etape_id):
                         from django.conf import settings
                         import os
                         
-                        print(f"🔍 DEBUG: MEDIA_ROOT = {settings.MEDIA_ROOT}")
+                        print(f"DEBUG: MEDIA_ROOT = {settings.MEDIA_ROOT}")
                         file_path = os.path.join(settings.MEDIA_ROOT, 'documents_defense', filename)
-                        print(f"🔍 DEBUG: Chemin complet = {file_path}")
-                        print(f"🔍 DEBUG: Dossier parent = {os.path.dirname(file_path)}")
+                        print(f"DEBUG: Chemin complet = {file_path}")
+                        print(f"DEBUG: Dossier parent = {os.path.dirname(file_path)}")
                         
                         os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                        print(f"✅ DEBUG: Dossier créé avec succès")
+                        print(f"DEBUG: Dossier créé avec succès")
                         
                         with open(file_path, 'wb+') as destination:
                             for chunk in documents_defense.chunks():
@@ -2375,10 +2375,10 @@ def completer_etape(request, affaire_id, etape_id):
                         
                         # Ajouter le nom du fichier aux données JSON
                         donnees_penales["fichier_documents_defense"] = filename
-                        print(f"✅ Fichier documents défense PDF sauvegardé: {filename}")
+                        print(f"Fichier documents défense PDF sauvegardé: {filename}")
                         
                     except Exception as e:
-                        print(f"❌ Erreur lors de la sauvegarde du fichier documents défense PDF: {str(e)}")
+                        print(f"Erreur lors de la sauvegarde du fichier documents défense PDF: {str(e)}")
                 
                 # Gérer l'upload du fichier PDF d'exécution
                 if document_execution:
@@ -2407,10 +2407,10 @@ def completer_etape(request, affaire_id, etape_id):
                         
                         # Ajouter le nom du fichier aux données JSON
                         donnees_penales["fichier_document_execution"] = filename
-                        print(f"✅ Fichier document exécution PDF sauvegardé: {filename}")
+                        print(f"Fichier document exécution PDF sauvegardé: {filename}")
                         
                     except Exception as e:
-                        print(f"❌ Erreur lors de la sauvegarde du fichier document exécution PDF: {str(e)}")
+                        print(f"Erreur lors de la sauvegarde du fichier document exécution PDF: {str(e)}")
                 
                 # Mettre à jour le JSON final avec toutes les données
                 etape.description_etape = json.dumps(donnees_penales, ensure_ascii=False)
@@ -2427,15 +2427,15 @@ def completer_etape(request, affaire_id, etape_id):
                 }
                 etape.documents_requis = json.dumps(metadonnees, ensure_ascii=False)
                 
-                print(f"✅ Tentative de sauvegarde de l'étape...")
+                print(f"Tentative de sauvegarde de l'étape...")
                 etape.save()
-                print(f"✅ Étape sauvegardée avec les données pénales")
+                print(f"Étape sauvegardée avec les données pénales")
                 
             except Exception as e:
-                print(f"❌ Erreur lors de la sauvegarde: {str(e)}")
+                print(f"Erreur lors de la sauvegarde: {str(e)}")
                 return Response({'error': f'Erreur lors de la sauvegarde: {str(e)}'}, status=400)
         else:
-            print(f"❌ Pas de données pénales détectées")
+            print(f"Pas de données pénales détectées")
         
         # Récupérer les données du huissier et de l'opposant si fournies
         huissier_id = request.data.get('huissier_id')
@@ -2574,7 +2574,7 @@ def completer_etape(request, affaire_id, etape_id):
                 etape.description_etape = resume_faits
                 print(f"=== DEBUG APRÈS MODIFICATION ===")
                 print(f"description_etape après: '{etape.description_etape}'")
-                print(f"✅ Résumé des faits stocké dans description_etape: {resume_faits}")
+                print(f"Résumé des faits stocké dans description_etape: {resume_faits}")
             
             # Ajouter les autres informations aux observations
             if plainte_pdf or docs_supplementaires:
@@ -2606,10 +2606,10 @@ def completer_etape(request, affaire_id, etape_id):
                         )
                         
                         observations_completes += f"Plainte PDF: {filename}\n"
-                        print(f"✅ Plainte PDF sauvegardée: {filename}")
+                        print(f"Plainte PDF sauvegardée: {filename}")
                         
                     except Exception as e:
-                        print(f"❌ Erreur lors de la sauvegarde de la plainte PDF: {str(e)}")
+                        print(f"Erreur lors de la sauvegarde de la plainte PDF: {str(e)}")
                         observations_completes += f"Erreur upload plainte PDF: {str(e)}\n"
                 
                 # Gérer l'upload des documents supplémentaires
@@ -2639,10 +2639,10 @@ def completer_etape(request, affaire_id, etape_id):
                             )
                             
                             observations_completes += f"Document supplémentaire {i+1}: {filename}\n"
-                            print(f"✅ Document supplémentaire {i+1} sauvegardé: {filename}")
+                            print(f"Document supplémentaire {i+1} sauvegardé: {filename}")
                             
                     except Exception as e:
-                        print(f"❌ Erreur lors de la sauvegarde des documents supplémentaires: {str(e)}")
+                        print(f"Erreur lors de la sauvegarde des documents supplémentaires: {str(e)}")
                         observations_completes += f"Erreur upload docs supplémentaires: {str(e)}\n"
                 
                 # Créer les participations des témoins après la création de l'étape
@@ -2657,9 +2657,9 @@ def completer_etape(request, affaire_id, etape_id):
                                 'dateintervention': date.today(),
                             }
                             Participationtemoinetape.objects.create(**participation_data)
-                            print(f"✅ Participation créée pour le témoin {temoin_id}")
+                            print(f"Participation créée pour le témoin {temoin_id}")
                         except Exception as e:
-                            print(f"❌ Erreur lors de la création de la participation pour le témoin {temoin_id}: {str(e)}")
+                            print(f"Erreur lors de la création de la participation pour le témoin {temoin_id}: {str(e)}")
         
         # Traitement des étapes pénales de la phase PROCÉDURE
         # 1. Étape "التحقيق الأولي" (Enquête préliminaire)
@@ -2680,7 +2680,7 @@ def completer_etape(request, affaire_id, etape_id):
                 observations_enquete_completes += f"Observations: {observations_enquete}\n"
             
             observations_completes += observations_enquete_completes
-            print(f"✅ Données d'enquête préliminaire ajoutées aux observations")
+            print(f"Données d'enquête préliminaire ajoutées aux observations")
         
         # 2. Étape "قرار النيابة العامة" (Décision du parquet)
         elif etape.idtypeetape and etape.idtypeetape.libelletypeetape == "قرار النيابة العامة":
@@ -2731,14 +2731,14 @@ def completer_etape(request, affaire_id, etape_id):
                     )
                     
                     observations_decision_completes += f"PDF décision officielle: {filename}\n"
-                    print(f"✅ PDF décision officielle sauvegardé: {filename}")
+                    print(f"PDF décision officielle sauvegardé: {filename}")
                     
                 except Exception as e:
-                    print(f"❌ Erreur lors de la sauvegarde du PDF décision officielle: {str(e)}")
+                    print(f"Erreur lors de la sauvegarde du PDF décision officielle: {str(e)}")
                     observations_decision_completes += f"Erreur upload PDF décision: {str(e)}\n"
             
             observations_completes += observations_decision_completes
-            print(f"✅ Données de décision du parquet ajoutées aux observations")
+            print(f"Données de décision du parquet ajoutées aux observations")
         
         # 3. Étape "جلسة المحاكمة" (Audience pénale) - UNIQUEMENT par type
         is_audience_penale = (
@@ -2750,7 +2750,7 @@ def completer_etape(request, affaire_id, etape_id):
         print(f"Reconnaissance par type: {etape.idtypeetape and etape.idtypeetape.libelletypeetape == 'جلسة المحاكمة'}")
         
         if is_audience_penale:
-            print(f"🎯 ÉTAPE RECONNUE: جلسة المحاكمة (par type ou par ID)")
+            print(f"ÉTAPE RECONNUE: جلسة المحاكمة (par type ou par ID)")
             print(f"Traitement des données d'audience pénale pour l'étape جلسة المحاكمة")
             print(f"=== DEBUG IDENTIFICATION ÉTAPE ===")
             print(f"Étape ID: {etape.idetape}")
@@ -2783,7 +2783,7 @@ def completer_etape(request, affaire_id, etape_id):
                     temoins_a_ajouter_audience = json.loads(temoins_a_ajouter_audience)
                 except json.JSONDecodeError:
                     temoins_a_ajouter_audience = []
-                    print(f"❌ Erreur lors du parsing JSON des témoins: {temoins_a_ajouter_audience}")
+                    print(f"Erreur lors du parsing JSON des témoins: {temoins_a_ajouter_audience}")
             
             print(f"Date audience pénale: {date_audience_penale}")
             print(f"Heure audience pénale: {heure_audience_penale}")
@@ -2817,7 +2817,7 @@ def completer_etape(request, affaire_id, etape_id):
             print(f"tribunal_audience_penale_id: '{tribunal_audience_penale_id}' (type: {type(tribunal_audience_penale_id)})")
             
             # Créer l'audience dans TOUS les cas pour l'étape جلسة المحاكمة
-            print(f"🎯 CRÉATION FORCÉE DE L'AUDIENCE PÉNALE")
+            print(f"CRÉATION FORCÉE DE L'AUDIENCE PÉNALE")
             try:
                 # Générer un ID unique pour l'audience pénale
                 import uuid
@@ -2835,38 +2835,38 @@ def completer_etape(request, affaire_id, etape_id):
                     try:
                         tribunal_audience = Tribunal.objects.get(idtribunal=tribunal_audience_penale_id)
                         audience_penale_data['idtribunal'] = tribunal_audience
-                        print(f"✅ Tribunal audience trouvé: {tribunal_audience.nomtribunal_fr or tribunal_audience.nomtribunal_ar or ''}")
+                        print(f"Tribunal audience trouvé: {tribunal_audience.nomtribunal_fr or tribunal_audience.nomtribunal_ar or ''}")
                     except Tribunal.DoesNotExist:
-                        print(f"❌ Tribunal {tribunal_audience_penale_id} non trouvé!")
+                        print(f"Tribunal {tribunal_audience_penale_id} non trouvé!")
                         observations_audience_completes += f"Erreur: Tribunal {tribunal_audience_penale_id} non trouvé\n"
                         # Continuer sans tribunal
                 else:
-                    print(f"⚠️ Aucun tribunal spécifié pour l'audience")
+                    print(f"Aucun tribunal spécifié pour l'audience")
                 
                 # Ajouter la date si fournie
                 if date_audience_penale:
                     audience_penale_data['dateaudience'] = date_audience_penale
-                    print(f"✅ Date d'audience ajoutée: {date_audience_penale}")
+                    print(f"Date d'audience ajoutée: {date_audience_penale}")
                 else:
                     # Utiliser la date d'aujourd'hui par défaut
                     audience_penale_data['dateaudience'] = date.today()
-                    print(f"⚠️ Date d'audience par défaut: {date.today()}")
+                    print(f"Date d'audience par défaut: {date.today()}")
                 
                 # Ajouter l'heure si fournie (vérifier si la colonne existe)
                 if heure_audience_penale:
                     try:
                         audience_penale_data['heureaudience'] = heure_audience_penale
-                        print(f"✅ Heure d'audience ajoutée: {heure_audience_penale}")
+                        print(f"Heure d'audience ajoutée: {heure_audience_penale}")
                     except Exception as e:
-                        print(f"⚠️ Impossible d'ajouter l'heure d'audience (colonne manquante): {str(e)}")
+                        print(f"Impossible d'ajouter l'heure d'audience (colonne manquante): {str(e)}")
                         # Continuer sans l'heure
                 
                 # Ajouter les remarques (sans caractères arabes pour éviter les problèmes d'encodage)
                 audience_penale_data['remarques'] = f"Audience penale - Presence: Plaignant({plaignant_present}), Accuse({accuse_present}), Avocat({avocat_present}), Ministere public({ministere_public_present})"
                 
-                print(f"✅ Données audience préparées: {audience_penale_data}")
+                print(f"Données audience préparées: {audience_penale_data}")
                 audience_penale = Audience.objects.create(**audience_penale_data)
-                print(f"✅ Audience pénale créée avec succès: {audience_penale.idaudience}")
+                print(f"Audience pénale créée avec succès: {audience_penale.idaudience}")
                 
                 # Créer le statut de l'audience pénale
                 StatutAudience.objects.create(
@@ -2878,7 +2878,7 @@ def completer_etape(request, affaire_id, etape_id):
                 observations_audience_completes += f"Audience créée avec succès: {audience_penale_id}\n"
                 
             except Exception as e:
-                print(f"❌ Erreur lors de la création de l'audience pénale: {str(e)}")
+                print(f"Erreur lors de la création de l'audience pénale: {str(e)}")
                 # Essayer de créer l'audience avec des données minimales
                 try:
                     audience_penale_data_minimal = {
@@ -2888,10 +2888,10 @@ def completer_etape(request, affaire_id, etape_id):
                         'remarques': f"Audience penale - Erreur creation - Presence: Plaignant({plaignant_present}), Accuse({accuse_present}), Avocat({avocat_present}), Ministere public({ministere_public_present})"
                     }
                     audience_penale = Audience.objects.create(**audience_penale_data_minimal)
-                    print(f"✅ Audience pénale créée avec données minimales: {audience_penale.idaudience}")
+                    print(f"Audience pénale créée avec données minimales: {audience_penale.idaudience}")
                     observations_audience_completes += f"Audience créée avec données minimales: {audience_penale_id}\n"
                 except Exception as e2:
-                    print(f"❌ Erreur même avec données minimales: {str(e2)}")
+                    print(f"Erreur même avec données minimales: {str(e2)}")
                     observations_audience_completes += f"Erreur création audience: {str(e2)}\n"
             
             # Gérer l'upload du PDF du compte-rendu d'audience
@@ -2920,10 +2920,10 @@ def completer_etape(request, affaire_id, etape_id):
                     )
                     
                     observations_audience_completes += f"Compte-rendu d'audience (PDF): {filename}\n"
-                    print(f"✅ Compte-rendu d'audience PDF sauvegardé: {filename}")
+                    print(f"Compte-rendu d'audience PDF sauvegardé: {filename}")
                     
                 except Exception as e:
-                    print(f"❌ Erreur lors de la sauvegarde du compte-rendu d'audience PDF: {str(e)}")
+                    print(f"Erreur lors de la sauvegarde du compte-rendu d'audience PDF: {str(e)}")
                     observations_audience_completes += f"Erreur upload compte-rendu audience PDF: {str(e)}\n"
             
             # Créer les participations des témoins pour l'audience pénale
@@ -2938,12 +2938,12 @@ def completer_etape(request, affaire_id, etape_id):
                             'dateintervention': date.today(),
                         }
                         Participationtemoinetape.objects.create(**participation_data)
-                        print(f"✅ Participation créée pour le témoin {temoin_id} de l'audience pénale")
+                        print(f"Participation créée pour le témoin {temoin_id} de l'audience pénale")
                     except Exception as e:
-                        print(f"❌ Erreur lors de la création de la participation pour le témoin {temoin_id} de l'audience pénale: {str(e)}")
+                        print(f"Erreur lors de la création de la participation pour le témoin {temoin_id} de l'audience pénale: {str(e)}")
             
             observations_completes += observations_audience_completes
-            print(f"✅ Données d'audience pénale ajoutées aux observations")
+            print(f"Données d'audience pénale ajoutées aux observations")
         
         # ===== GESTION UNIFIÉE DES AUDIENCES =====
         print(f"=== GESTION AUDIENCES ===")
@@ -2955,18 +2955,18 @@ def completer_etape(request, affaire_id, etape_id):
             print(f"Longueur libellé: {len(etape_libelle)}")
             print(f"Caractères libellé: {[ord(c) for c in etape_libelle]}")
         else:
-            print(f"❌ Aucun type d'étape trouvé!")
+            print(f"Aucun type d'étape trouvé!")
             etape_libelle = None
         
         # Fonction pour créer une audience
         def creer_audience(etape_type, tribunal_id, date_audience, heure_audience, remarques):
-            print(f"🔧 Tentative création audience: {etape_type}")
+            print(f"Tentative création audience: {etape_type}")
             print(f"   - tribunal_id: {tribunal_id}")
             print(f"   - date_audience: {date_audience}")
             print(f"   - heure_audience: {heure_audience}")
             
             if not tribunal_id or not date_audience:
-                print(f"❌ Données manquantes pour créer l'audience: tribunal_id={tribunal_id}, date_audience={date_audience}")
+                print(f"Données manquantes pour créer l'audience: tribunal_id={tribunal_id}, date_audience={date_audience}")
                 return None
                 
             try:
@@ -2999,22 +2999,22 @@ def completer_etape(request, affaire_id, etape_id):
                 )
                 print(f"   - statut créé")
                 
-                print(f"✅ Audience créée avec succès: {audience_id}")
+                print(f"Audience créée avec succès: {audience_id}")
                 return audience
                 
             except Exception as e:
-                print(f"❌ Erreur création audience: {str(e)}")
+                print(f"Erreur création audience: {str(e)}")
                 import traceback
-                print(f"❌ Traceback: {traceback.format_exc()}")
+                print(f"Traceback: {traceback.format_exc()}")
                 return None
         
         # Créer audience selon le type d'étape
         if etape_libelle:
-            print(f"🎯 Traitement de l'étape: '{etape_libelle}'")
+            print(f"Traitement de l'étape: '{etape_libelle}'")
             
             # Étape "استدعاء للمثول" (Convocation)
             if etape_libelle == "استدعاء للمثول":
-                print(f"🎯 CRÉATION AUDIENCE CONVOCATION")
+                print(f"CRÉATION AUDIENCE CONVOCATION")
                 
                 # Vérifier si c'est une affaire pénale (données d'audience pénale présentes)
                 date_audience_penale = request.data.get('date_audience_penale')
@@ -3022,7 +3022,7 @@ def completer_etape(request, affaire_id, etape_id):
                 tribunal_audience_penale_id = request.data.get('tribunal_audience_penale_id')
                 
                 if date_audience_penale and tribunal_audience_penale_id:
-                    print(f"🎯 Détection affaire pénale - Utilisation des données d'audience pénale")
+                    print(f"Détection affaire pénale - Utilisation des données d'audience pénale")
                     plaignant_present = request.data.get('plaignant_present', False)
                     accuse_present = request.data.get('accuse_present', False)
                     avocat_present = request.data.get('avocat_present', False)
@@ -3038,7 +3038,7 @@ def completer_etape(request, affaire_id, etape_id):
                     if audience:
                         observations_completes += f"\n=== AUDIENCE PENALE ===\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience_penale}\nHeure: {heure_audience_penale or 'Non spécifiée'}\n"
                 else:
-                    print(f"🎯 Affaire non-pénale - Utilisation des données de convocation normale")
+                    print(f"Affaire non-pénale - Utilisation des données de convocation normale")
                     audience = creer_audience(
                         etape_type="convocation",
                         tribunal_id=tribunal_id,
@@ -3051,7 +3051,7 @@ def completer_etape(request, affaire_id, etape_id):
             
             # Étape "جلسة المحاكمة" (Audience pénale)
             elif etape_libelle == "جلسة المحاكمة":
-                print(f"🎯 CRÉATION AUDIENCE PÉNALE")
+                print(f"CRÉATION AUDIENCE PÉNALE")
                 # Récupérer les données spécifiques à l'audience pénale
                 date_audience_penale = request.data.get('date_audience_penale')
                 heure_audience_penale = request.data.get('heure_audience_penale')
@@ -3073,11 +3073,11 @@ def completer_etape(request, affaire_id, etape_id):
             
             # Autres étapes - Créer une audience si des données sont fournies
             else:
-                print(f"ℹ️ Étape '{etape_libelle}' - Vérification si données d'audience disponibles")
+                print(f"Étape '{etape_libelle}' - Vérification si données d'audience disponibles")
                 
                 # Si des données d'audience sont fournies, créer une audience générique
                 if tribunal_id and date_audience:
-                    print(f"🎯 CRÉATION AUDIENCE GÉNÉRIQUE pour l'étape '{etape_libelle}'")
+                    print(f"CRÉATION AUDIENCE GÉNÉRIQUE pour l'étape '{etape_libelle}'")
                     audience = creer_audience(
                         etape_type="generique",
                         tribunal_id=tribunal_id,
@@ -3088,9 +3088,9 @@ def completer_etape(request, affaire_id, etape_id):
                     if audience:
                         observations_completes += f"\n=== AUDIENCE GÉNÉRIQUE ===\nÉtape: {etape_libelle}\nTribunal: {audience.idtribunal.nomtribunal_fr or audience.idtribunal.nomtribunal_ar or ''}\nDate: {date_audience}\nHeure: {heure_audience or 'Non spécifiée'}\n"
                 else:
-                    print(f"ℹ️ Aucune donnée d'audience fournie pour l'étape '{etape_libelle}'")
+                    print(f"Aucune donnée d'audience fournie pour l'étape '{etape_libelle}'")
         else:
-            print(f"❌ Impossible de traiter l'audience - Aucun libellé d'étape")
+            print(f"Impossible de traiter l'audience - Aucun libellé d'étape")
             
         
         # Traitement des données de plainte pour l'étape "استلام شكاية"
@@ -3110,7 +3110,7 @@ def completer_etape(request, affaire_id, etape_id):
                 # Mettre à jour les observations de l'étape
                 etape.observations_etape = observations_completes
                 etape.save()
-                print(f"✅ Données de plainte ajoutées aux observations")
+                print(f"Données de plainte ajoutées aux observations")
         
         # Traitement des données de représentation pour l'étape "تقديم تمثيل"
         if etape.idtypeetape and etape.idtypeetape.libelletypeetape == "تقديم تمثيل":
@@ -3129,7 +3129,7 @@ def completer_etape(request, affaire_id, etape_id):
                 # Mettre à jour les observations de l'étape
                 etape.observations_etape = observations_completes
                 etape.save()
-                print(f"✅ Données de représentation ajoutées aux observations")
+                print(f"Données de représentation ajoutées aux observations")
         
         # Traitement des données de délibération pour l'étape "مداولة"
         if etape.idtypeetape and etape.idtypeetape.libelletypeetape == "مداولة":
@@ -3144,7 +3144,7 @@ def completer_etape(request, affaire_id, etape_id):
                 # Mettre à jour les observations de l'étape
                 etape.observations_etape = observations_completes
                 etape.save()
-                print(f"✅ Données de délibération ajoutées aux observations")
+                print(f"Données de délibération ajoutées aux observations")
         
         # Traitement des données de réponse pour l'étape "رد على المقال"
         if etape.idtypeetape and etape.idtypeetape.libelletypeetape == "رد على المقال":
@@ -3159,7 +3159,7 @@ def completer_etape(request, affaire_id, etape_id):
                 # Mettre à jour les observations de l'étape
                 etape.observations_etape = observations_completes
                 etape.save()
-                print(f"✅ Données de réponse ajoutées aux observations")
+                print(f"Données de réponse ajoutées aux observations")
         
 
         
@@ -3168,7 +3168,7 @@ def completer_etape(request, affaire_id, etape_id):
         
         # Sauvegarder l'étape avec toutes les modifications
         etape.save()
-        print(f"✅ Étape sauvegardée avec succès")
+        print(f"Étape sauvegardée avec succès")
         
         # Mettre à jour les paramètres de notification de l'affaire si fournis
         if huissier_id or opposant_id:
@@ -3179,13 +3179,13 @@ def completer_etape(request, affaire_id, etape_id):
             affaire.save()
         
         # NOUVEAU : Mettre à jour l'étape actuelle et fermer les étapes précédentes
-        print(f"🔄 Mise à jour de l'étape actuelle et fermeture des étapes précédentes")
+        print(f"Mise à jour de l'étape actuelle et fermeture des étapes précédentes")
         
         # 1. Marquer l'étape actuelle comme terminée
         if not etape.date_fin_effective:
             etape.date_fin_effective = date.today()
             etape.save()
-            print(f"✅ Étape {etape.idetape} marquée comme terminée (date_fin_effective: {etape.date_fin_effective})")
+            print(f"Étape {etape.idetape} marquée comme terminée (date_fin_effective: {etape.date_fin_effective})")
         
         # 2. Fermer toutes les étapes précédentes non terminées
         etapes_precedentes = Etapejudiciaire.objects.filter(
@@ -3196,10 +3196,10 @@ def completer_etape(request, affaire_id, etape_id):
         for etape_prec in etapes_precedentes:
             etape_prec.date_fin_effective = date.today()
             etape_prec.save()
-            print(f"✅ Étape précédente {etape_prec.idetape} fermée (date_fin_effective: {etape_prec.date_fin_effective})")
+            print(f"Étape précédente {etape_prec.idetape} fermée (date_fin_effective: {etape_prec.date_fin_effective})")
         
         # 3. NOUVELLE LOGIQUE : Utiliser get_etape_actuelle_par_phase pour déterminer la prochaine étape
-        print(f"🔄 NOUVELLE LOGIQUE: Détermination de l'étape actuelle avec get_etape_actuelle_par_phase")
+        print(f"NOUVELLE LOGIQUE: Détermination de l'étape actuelle avec get_etape_actuelle_par_phase")
         
         from .services import get_etape_actuelle_par_phase
         nouvelle_etape_actuelle = get_etape_actuelle_par_phase(affaire)
@@ -3208,21 +3208,21 @@ def completer_etape(request, affaire_id, etape_id):
             # Mettre à jour l'étape actuelle de l'affaire avec la nouvelle logique
             affaire.etape_actuelle = nouvelle_etape_actuelle
             affaire.save()
-            print(f"✅ Étape actuelle mise à jour avec la nouvelle logique: {nouvelle_etape_actuelle.idetape}")
-            print(f"✅ Type d'étape: {nouvelle_etape_actuelle.idtypeetape.libelletypeetape if nouvelle_etape_actuelle.idtypeetape else 'Sans type'}")
+            print(f"Étape actuelle mise à jour avec la nouvelle logique: {nouvelle_etape_actuelle.idetape}")
+            print(f"Type d'étape: {nouvelle_etape_actuelle.idtypeetape.libelletypeetape if nouvelle_etape_actuelle.idtypeetape else 'Sans type'}")
             
             # Démarrer la nouvelle étape si elle n'est pas encore commencée
             if not nouvelle_etape_actuelle.date_debut_effective:
                 nouvelle_etape_actuelle.date_debut_effective = date.today()
                 nouvelle_etape_actuelle.save()
-                print(f"✅ Nouvelle étape {nouvelle_etape_actuelle.idetape} démarrée")
+                print(f"Nouvelle étape {nouvelle_etape_actuelle.idetape} démarrée")
             
             prochaine_etape = nouvelle_etape_actuelle
         else:
             # Si pas de nouvelle étape, l'étape actuelle reste la même
             affaire.etape_actuelle = etape
             affaire.save()
-            print(f"ℹ️ Aucune nouvelle étape trouvée, étape actuelle reste: {etape.idetape}")
+            print(f"Aucune nouvelle étape trouvée, étape actuelle reste: {etape.idetape}")
             prochaine_etape = None
         
         # Créer le statut terminé
@@ -3239,9 +3239,9 @@ def completer_etape(request, affaire_id, etape_id):
                 libellestatutetape='En cours',
                 datedebut=date.today()
             )
-            print(f"✅ Statut 'En cours' créé pour l'étape suivante: {prochaine_etape.idetape}")
+            print(f"Statut 'En cours' créé pour l'étape suivante: {prochaine_etape.idetape}")
         else:
-            print(f"ℹ️ Aucune étape suivante, pas de statut 'En cours' à créer")
+            print(f"Aucune étape suivante, pas de statut 'En cours' à créer")
         
         return Response({
             'message': 'Étape complétée avec succès',
@@ -3605,11 +3605,11 @@ def supprimer_audience(request, audience_id):
         
         # Supprimer d'abord tous les statuts associés
         statuts_supprimes = StatutAudience.objects.filter(idaudience=audience).delete()
-        print(f"✅ {statuts_supprimes[0]} statut(s) supprimé(s) pour l'audience {audience_id}")
+        print(f"{statuts_supprimes[0]} statut(s) supprimé(s) pour l'audience {audience_id}")
         
         # Supprimer l'audience
         audience.delete()
-        print(f"✅ Audience {audience_id} supprimée avec succès")
+        print(f"Audience {audience_id} supprimée avec succès")
         
         return Response({
             'message': f'Audience {audience_id} supprimée avec succès',
@@ -3622,7 +3622,7 @@ def supprimer_audience(request, audience_id):
         }, status=status.HTTP_404_NOT_FOUND)
         
     except Exception as e:
-        print(f"❌ Erreur lors de la suppression de l'audience {audience_id}: {str(e)}")
+        print(f"Erreur lors de la suppression de l'audience {audience_id}: {str(e)}")
         return Response({
             'error': f'Erreur lors de la suppression: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -3781,7 +3781,7 @@ def password_reset_request(request):
         
     except Exception as e:
         # En cas d'erreur inattendue, retourner une erreur générique
-        print(f"❌ Erreur lors de la demande de réinitialisation: {str(e)}")
+        print(f"Erreur lors de la demande de réinitialisation: {str(e)}")
         return Response({
             "error": "Erreur lors de la génération du lien de réinitialisation"
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -3860,7 +3860,7 @@ def password_reset_confirm(request):
         
     except Exception as e:
         # En cas d'erreur inattendue, retourner une erreur générique
-        print(f"❌ Erreur lors de la confirmation de réinitialisation: {str(e)}")
+        print(f"Erreur lors de la confirmation de réinitialisation: {str(e)}")
         return Response({
             "error": "Erreur lors de la réinitialisation du mot de passe"
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

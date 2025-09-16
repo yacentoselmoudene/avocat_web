@@ -388,7 +388,7 @@ def get_etapes_phase_initiale(affaire):
         if (code.startswith('2') or code.startswith('3') or code.startswith('4') or 
             'PEN' in code or 'PENAL' in code):
             is_penal_by_code = True
-            print(f"   ✅ Détecté comme pénal par code: {code}")
+            print(f"#printDétecté comme pénal par code: {code}")
     
     if role_client == "demandeur":
         # Étapes pour le demandeur
@@ -455,7 +455,7 @@ def get_etapes_phase_procedure(affaire):
         if (code.startswith('2') or code.startswith('3') or code.startswith('4') or 
             'PEN' in code or 'PENAL' in code):
             is_penal_by_code = True
-            print(f"   ✅ Détecté comme pénal par code: {code}")
+            print(f"#printDétecté comme pénal par code: {code}")
     
     # Gestion spéciale pour les affaires pénales
     if (classification and classification.get('type') == 'PENAL') or is_penal_by_code:
@@ -611,10 +611,10 @@ def get_etape_actuelle_procedure(affaire):
                     ordre_etape=i,
                     etape_obligatoire=True
                 )
-                print(f"✅ Étape procédure créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+                print(f"Étape procédure créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
                 return etape
             else:
-                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+                print(f"Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
 
     return None
 
@@ -633,7 +633,7 @@ def get_etape_actuelle_execution(affaire):
     classification = ClassificationAffaireService.get_classification_by_code(affaire.code_dossier) if affaire.code_dossier else None
     
     # DEBUG: Afficher la classification
-    print(f"🔍 DEBUG get_etape_actuelle_execution:")
+    print(f"DEBUG get_etape_actuelle_execution:")
     print(f"   Code dossier: {affaire.code_dossier}")
     print(f"   Classification: {classification}")
     print(f"   Rôle client: {role_client}")
@@ -646,7 +646,7 @@ def get_etape_actuelle_execution(affaire):
         if (code.startswith('2') or code.startswith('3') or code.startswith('4') or 
             'PEN' in code or 'PENAL' in code):
             is_penal_by_code = True
-            print(f"   ✅ Détecté comme pénal par code: {code}")
+            print(f"#printDétecté comme pénal par code: {code}")
     
     if (classification and classification.get('type') == 'PENAL') or is_penal_by_code:
         if role_client == "demandeur":
@@ -683,10 +683,10 @@ def get_etape_actuelle_execution(affaire):
                     ordre_etape=0,
                     etape_obligatoire=True
                 )
-                print(f"✅ Étape exécution créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+                print(f"Étape exécution créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
                 return etape
             else:
-                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+                print(f"Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
 
     return None
 
@@ -855,7 +855,7 @@ def get_etapes_phase_procedure(affaire):
 
             is_penal_by_code = True
 
-            print(f"   ✅ Détecté comme pénal par code: {code}")
+            print(f"#printDétecté comme pénal par code: {code}")
 
     
 
@@ -1079,13 +1079,13 @@ def get_etape_actuelle_initiale(affaire):
 
                 )
 
-                print(f"✅ Étape créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+                print(f"Étape créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
 
                 return etape
 
             else:
 
-                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+                print(f"Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
 
 
 
@@ -1167,7 +1167,7 @@ def get_etape_actuelle_procedure(affaire):
 
                 )
 
-                print(f"✅ Étape procédure créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+                print(f"Étape procédure créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
 
                 return etape
 
@@ -1237,7 +1237,7 @@ def get_etape_actuelle_execution(affaire):
 
             is_penal_by_code = True
 
-            print(f"   ✅ Détecté comme pénal par code: {code}")
+            print(f"#printDétecté comme pénal par code: {code}")
 
     
 
@@ -1311,13 +1311,13 @@ def get_etape_actuelle_execution(affaire):
 
                 )
 
-                print(f"✅ Étape exécution créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
+                print(f"Étape exécution créée: {etape.idetape} avec type: {libelle_etape} (rôle: {role_client})")
 
                 return etape
 
             else:
 
-                print(f"❌ Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
+                print(f"Type d'étape non trouvé pour: {libelle_etape} (rôle: {role_client})")
 
 
 
