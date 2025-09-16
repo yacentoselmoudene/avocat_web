@@ -28,7 +28,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import *
 from .serializers import *
 from .services import *
-from api.utils.i18n import LanguageMixin
+
 
 # Définissent les options disponibles pour les affaires pénales
 AUTORITES_EMETTRICES = [
@@ -79,6 +79,28 @@ TYPES_JUGEMENT_PENAL = [
 ]
 
 logger = logging.getLogger(__name__)
+
+# views.py (tout en haut)
+from django.utils import translation
+
+class LanguageMixin:
+    def get_lang(self, request):
+        lang = (request.query_params.get('lang')
+                or request.headers.get('Accept-Language')
+                or translation.get_language()
+                or 'fr').lower()
+        return 'ar' if lang.startswith('ar') else 'fr'
+
+    def lbl(self, obj, base: str, lang: str) -> str:
+        if not obj:
+            return ''
+        if isinstance(obj, dict):
+            ar = obj.get(f"{base}_ar")
+            fr = obj.get(f"{base}_fr")
+        else:
+            ar = getattr(obj, f"{base}_ar", None)
+            fr = getattr(obj, f"{base}_fr", None)
+        return (ar or fr or '') if lang == 'ar' else (fr or ar or '')
 
 # Fonction utilitaire pour déterminer le type d'étape selon l'ID et le contexte
 def get_type_etape_by_etape_id(etape_id, phase=None, role=None):
