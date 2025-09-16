@@ -363,7 +363,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
             
         # Staff/Avocat  (app web)
         elif user.is_staff:
-            print(f"👨‍💼 Staff connecté: {user.username} - Accès à toutes les affaires".encode("utf-8", "ignore").decode())
+            print(f"👨‍💼 Staff connecte: {user.username} - Acces a toutes les affaires".encode("utf-8", "ignore").decode())
             queryset = Affairejudiciaire.objects.all()
             print(f"📊 Total affaires dans la base: {queryset.count()}")
             
@@ -1055,7 +1055,7 @@ class ContratViewSet(viewsets.ModelViewSet):
             
         # Staff/Avocat connecté
         elif user.is_staff:
-            print(f"👨‍💼 Staff connecté: {user.username} - Accès à tous les contrats")
+            print(f"👨‍💼 Staff connecte: {user.username} - Acces a tous les contrats".encode("ascii", "ignore").decode())
             queryset = Contrat.objects.all()
             print(f"📄 Total contrats dans la base: {queryset.count()}")
             
