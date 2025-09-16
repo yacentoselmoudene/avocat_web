@@ -1344,9 +1344,7 @@ class ClassificationAffaireView(LanguageMixin, APIView):
             type_principale = cat.sous_type.type_principale
             sous_type = cat.sous_type
 
-            classification = self.localize_struct({
-                # keys you want in the response:
-            }, {
+            classification = self.localize_struct({}, {
                 "type": (type_principale, "libelle"),
                 "categorie": (sous_type, "libelle"),
                 "detail": (cat, "libelle"),
