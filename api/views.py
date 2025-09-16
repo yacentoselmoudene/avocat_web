@@ -102,6 +102,12 @@ class LanguageMixin:
             fr = getattr(obj, f"{base}_fr", None)
         return (ar or fr or '') if lang == 'ar' else (fr or ar or '')
 
+    def localize_struct(self, struct: dict, mapping: dict, lang: str) -> dict:
+        out = {}
+        for key, (obj, base) in mapping.items():
+            out[key] = self.lbl(obj, base, lang)
+        return out
+
 # Fonction utilitaire pour déterminer le type d'étape selon l'ID et le contexte
 def get_type_etape_by_etape_id(etape_id, phase=None, role=None):
     """Retourne le bon type d'étape selon l'ID et le contexte"""
