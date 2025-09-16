@@ -223,7 +223,7 @@ class TribunalSuggestionService:
 
         if not classification_data:
             return None
-            
+        print("type affaire esrt ", classification_data)
         type_affaire = classification_data.get('type', '')
         tribunaux = cls._get_tribunaux_by_category(type_affaire)
         
@@ -252,7 +252,9 @@ class TribunalSuggestionService:
         tribunaux = []
         
         # Mapping des types d'affaires vers les types de tribunaux
+
         type_mapping = {
+            'مدني': ['TPI', 'CA'],
             'مدني': ['TPI', 'CA'],
             'جنائي': ['TRIB_PENAL', 'CA'],
             'إدارية': ['TRIB_ADMIN', 'CA'],
@@ -261,7 +263,7 @@ class TribunalSuggestionService:
             'تبليغات': ['TPI'],
 
             'مؤسسة الرئيس وغرفة المشورة': ['TPI', 'CA'],
-            'المدني': ['TPI', 'CA'],
+            'مدني': ['TPI', 'CA'],
             'الأكرية': ['TPI', 'CA'],
             'العقار': ['TPI', 'CA'],
             'الاجتماعي': ['TPI', 'CA'],
@@ -292,7 +294,7 @@ class TribunalSuggestionService:
         
         # le type de tribunal selon le type d'affaire par defaut tpi et ca
         tribunal_types = type_mapping.get(type_affaire, ['TPI', 'CA'])
-        
+
         # Récupérer les tribunaux correspondants
         for tribunal_type in tribunal_types:
             try:
@@ -301,18 +303,22 @@ class TribunalSuggestionService:
                 # SELECT * FROM tribunal WHERE idtypetribunal_id = 1;
                 type_tribunal = TypeTribunal.objects.get(code_type=tribunal_type)
                 tribunaux_du_type = Tribunal.objects.filter(idtypetribunal=type_tribunal)
-                
+                print(type_tribunal, "  typesss ", tribunaux_du_type)
                 for tribunal in tribunaux_du_type:
                     tribunaux.append({
                         'id': tribunal.idtribunal,
-                        'nom': tribunal.nomtribunal_fr or tribunal.nomtribunal_ar or '',
-                        'ville': tribunal.villetribunal_fr or tribunal.villetribunal_ar or '',
+                        'nom_ar': tribunal.nomtribunal_ar or '',
+                        'nom_fr': tribunal.nomtribunal_fr or '',
+                        'ville_fr': tribunal.villetribunal_fr or '',
+                        'ville_ar': tribunal.villetribunal_ar or '',
                         'type': tribunal.idtypetribunal.libelletypetribunal_fr or tribunal.idtypetribunal.libelletypetribunal_ar or '',
                         'niveau': tribunal.idtypetribunal.niveau,
-                        'adresse': tribunal.adressetribunal_fr or tribunal.adressetribunal_ar or '',
+                        'adresse_fr': tribunal.adressetribunal_fr or '',
+                        'adresse_ar': tribunal.adressetribunal_ar or '',
                         'telephone': tribunal.telephonetribunal
                     })
             except TypeTribunal.DoesNotExist:
+                print("eroooore ",TypeTribunal)
                 continue
         
         return tribunaux

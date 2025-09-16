@@ -7,6 +7,11 @@ from .models import TypeAffaire, StatutAffaire
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 
+def get_localized_value(obj, field_base, lang, default=""):
+    field_name = f"{field_base}_{lang}"
+    return getattr(obj, field_name, default)
+
+
 # Serializer pour les contrats avec gestion des fichiers
 class ContratSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()

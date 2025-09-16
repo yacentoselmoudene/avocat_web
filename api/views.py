@@ -10,6 +10,7 @@ from datetime import date, datetime, timedelta
 import json
 import os
 import uuid
+import logging
 
 # Django REST Framework imports
 from rest_framework import viewsets, status, filters, routers
@@ -27,7 +28,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import *
 from .serializers import *
 from .services import *
-
+from .utils.i18n import LanguageMixin
 
 # Définissent les options disponibles pour les affaires pénales
 AUTORITES_EMETTRICES = [
@@ -77,7 +78,7 @@ TYPES_JUGEMENT_PENAL = [
     ('AUTRE', 'Autre peine')
 ]
 
-
+logger = logging.getLogger(__name__)
 
 # Fonction utilitaire pour déterminer le type d'étape selon l'ID et le contexte
 def get_type_etape_by_etape_id(etape_id, phase=None, role=None):
@@ -340,7 +341,7 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
             
         # Staff/Avocat  (app web)
         elif user.is_staff:
-            print(f"👨‍💼 Staff connecté: {user.username} - Accès à toutes les affaires")
+            print(f"👨‍💼 Staff connecté: {user.username} - Accès à toutes les affaires".encode("utf-8", "ignore").decode())
             queryset = Affairejudiciaire.objects.all()
             print(f"📊 Total affaires dans la base: {queryset.count()}")
             
@@ -1301,9 +1302,10 @@ class AffaireOpposantAvocatViewSet(viewsets.ModelViewSet):
 # Vues d'API pour des fonctionnalités métier spécifiques
 
 # vue de  suggestion et filtrage selon le code
-class ClassificationAffaireView(APIView):
+class ClassificationAffaireView(LanguageMixin, APIView):
     
     def get(self, request):
+        lang = self.get_lang(request)
         code = request.query_params.get('code')
         if not code:
             return Response({"error": "Code requis"}, status=status.HTTP_400_BAD_REQUEST)
@@ -1311,40 +1313,51 @@ class ClassificationAffaireView(APIView):
             # code exacte
             cat = CategorieAffaire.objects.select_related('sous_type__type_principale').get(code=code)
             # classification complete
-            classification = {
-                "type": cat.sous_type.type_principale.libelle_fr or cat.sous_type.type_principale.libelle_ar or '',
-                "categorie": cat.sous_type.libelle_fr or cat.sous_type.libelle_ar or '',
-                "detail": cat.libelle_fr or cat.libelle_ar or '',
-                "type_principale": cat.sous_type.type_principale.libelle_fr or cat.sous_type.type_principale.libelle_ar or ''  # Type de la première table
-            }
+            type_principale = cat.sous_type.type_principale
+            sous_type = cat.sous_type
+
+            classification = self.localize_struct({
+                # keys you want in the response:
+            }, {
+                "type": (type_principale, "libelle"),
+                "categorie": (sous_type, "libelle"),
+                "detail": (cat, "libelle"),
+                "type_principale": (type_principale, "libelle"),
+            }, lang)
             
             # sugg de tribunaux
-            tribunaux_suggestion = TribunalSuggestionService.get_tribunaux_by_classification(classification)
-            
-            response_data = {
-                "type": classification["type"],
-                "categorie": classification["categorie"],
-                "detail": classification["detail"],
-                "type_principale": classification["type_principale"],  # Type de la première table
-                "tribunaux": tribunaux_suggestion["tribunaux"] if tribunaux_suggestion else []
-            }
-            
-            return Response(response_data)
+            logger.info("Classification calculée: %s", classification)
+            tribunaux_suggestion = TribunalSuggestionService.get_tribunaux_by_classification(classification) or {}
+            tribs = []
+            for t in tribunaux_suggestion.get("tribunaux", []):
+                print( " ttt ",t)
+                tribs.append({
+                    "id": (t.get("id") if isinstance(t, dict) else getattr(t, "id", None)) or
+                          (t.get("idtribunal") if isinstance(t, dict) else getattr(t, "idtribunal", None)),
+                    "nom": self.lbl(t, "nom", lang),
+                    "type": self.lbl(t, "type", lang),
+                    "ville": self.lbl(t, "ville", lang),
+                    "niveau": self.lbl(t, "niveau", lang),
+                    "adresse": (t.get("adresse") if isinstance(t, dict) else getattr(t, "adresse", "")) or "",
+                    "telephone": (t.get("telephone") if isinstance(t, dict) else getattr(t, "telephone", "")) or "",
+                })
+            #print("tribstribs    ",tribs)
+
+            return Response({**classification, "tribunaux": tribs}, status=status.HTTP_200_OK)
         # si le  code exacte ne se trouve pas :
         except CategorieAffaire.DoesNotExist:
-            # suggestions basées sur le début
-            suggestions = CategorieAffaire.objects.filter(code__startswith=code)[:10]
-            # on limite 10 resultat
-            return Response({
-                "suggestions": [
-                    {
-                        "code": s.code,
-                        "libelle": s.libelle_fr or s.libelle_ar or '',
-                        "categorie": s.sous_type.libelle_fr or s.sous_type.libelle_ar or '',
-                        "type": s.sous_type.type_principale.libelle_fr or s.sous_type.type_principale.libelle_ar or ''
-                    } for s in suggestions
-                ]
-            }, status=status.HTTP_200_OK)
+            qs = (CategorieAffaire.objects
+                  .select_related('sous_type__type_principale')
+                  .filter(code__startswith=code)[:10])
+            suggestions = []
+            for s in qs:
+                suggestions.append({
+                    "code": s.code,
+                    "libelle": self.lbl(s, "libelle", lang),
+                    "categorie": self.lbl(s.sous_type, "libelle", lang),
+                    "type": self.lbl(s.sous_type.type_principale, "libelle", lang),
+                })
+            return Response({"suggestions": suggestions}, status=status.HTTP_200_OK)
 
 # Vue pour  tribunaux selon le type daffaire
 class TribunalSuggestionView(APIView):

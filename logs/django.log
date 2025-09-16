@@ -1,46 +1,177 @@
-/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/urls.py changed, reloading.
-Watching for file changes with StatReloader
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
 "POST /api/token/ HTTP/1.1" 200 628
-"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/typeclients/ HTTP/1.1" 200 258
 "GET /api/statutaffaires/ HTTP/1.1" 200 115
-"GET /api/typetribunals/ HTTP/1.1" 200 1914
-"GET /api/tribunals/ HTTP/1.1" 200 79645
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1471
+"GET /api/classification/?code=11 HTTP/1.1" 200 1471
+Internal Server Error: /api/classification/
+Traceback (most recent call last):
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/django/views/decorators/csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/django/views/generic/base.py", line 104, in view
+    return self.dispatch(request, *args, **kwargs)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/rest_framework/views.py", line 515, in dispatch
+    response = self.handle_exception(exc)
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/rest_framework/views.py", line 475, in handle_exception
+    self.raise_uncaught_exception(exc)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/rest_framework/views.py", line 486, in raise_uncaught_exception
+    raise exc
+  File "/Users/yassineelmoudene/Desktop/Devs/Venv/lib/python3.13/site-packages/rest_framework/views.py", line 512, in dispatch
+    response = handler(request, *args, **kwargs)
+  File "/Users/yassineelmoudene/Desktop/Devs/avocat_web/api/views.py", line 1329, in get
+    logger.info("Classification calculée: %s", classification)
+    ^^^^^^
+NameError: name 'logger' is not defined
+"GET /api/classification/?code=1101 HTTP/1.1" 500 90048
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/api/views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/typeclients/ HTTP/1.1" 200 258
-"GET /api/clients/ HTTP/1.1" 200 465
-"GET /api/clients/ HTTP/1.1" 200 465
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
-"GET /api/typeclients/ HTTP/1.1" 401 172
-"GET /api/clients/ HTTP/1.1" 401 172
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1471
+"GET /api/classification/?code=11 HTTP/1.1" 200 1471
+"GET /api/classification/?code=1101 HTTP/1.1" 200 256
+Watching for file changes with StatReloader
+"GET /api/classification/?code=1 HTTP/1.1" 401 224
+"GET /api/classification/?code=11 HTTP/1.1" 401 224
 "POST /api/token/ HTTP/1.1" 200 628
+"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/typeclients/ HTTP/1.1" 200 258
-"GET /api/clients/ HTTP/1.1" 200 465
-"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/typeaffaires/ HTTP/1.1" 200 897
 "GET /api/statutaffaires/ HTTP/1.1" 200 115
-"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 248
+Watching for file changes with StatReloader
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 248
+Watching for file changes with StatReloader
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 248
+Watching for file changes with StatReloader
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 16268
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/api/views.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/api/views.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/api/views.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 16268
+Watching for file changes with StatReloader
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/clients/ HTTP/1.1" 200 465
 "GET /api/typeclients/ HTTP/1.1" 200 258
 "GET /api/affairejudiciaires/ HTTP/1.1" 200 668
 "GET /api/affaires/1/progression/ HTTP/1.1" 200 68
 "GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
-/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/wsgi.py changed, reloading.
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 16268
 Watching for file changes with StatReloader
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1101 HTTP/1.1" 200 28235
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
