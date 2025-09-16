@@ -28,7 +28,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import *
 from .serializers import *
 from .services import *
-from .utils.i18n import LanguageMixin
+from api.utils.i18n import LanguageMixin
 
 # Définissent les options disponibles pour les affaires pénales
 AUTORITES_EMETTRICES = [
