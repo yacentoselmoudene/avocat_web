@@ -11,6 +11,10 @@ import json
 import os
 import uuid
 import logging
+from rest_framework import permissions
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
+
 
 # Django REST Framework imports
 from rest_framework import viewsets, status, filters, routers
@@ -3869,3 +3873,21 @@ def password_reset_confirm(request):
             "error": "Erreur lors de la réinitialisation du mot de passe"
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        refresh = request.data.get("refresh")
+        if not refresh:
+            return Response({"detail": "refresh manquant"}, status=400)
+        try:
+            RefreshToken(refresh).blacklist()
+        except Exception:
+            return Response({"detail": "refresh invalide"}, status=400)
+        return Response({"detail": "Déconnecté"}, status=205)
+
+class LogoutAllView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def post(self, request):
+        for t in OutstandingToken.objects.filter(user=request.user):
+            BlacklistedToken.objects.get_or_create(token=t)
+        return Response({"detail": "Déconnecté partout"}, status=205)

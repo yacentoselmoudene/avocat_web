@@ -144,6 +144,8 @@ urlpatterns = [
 urlpatterns += [
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/logout/', views.LogoutView.as_view(), name='logout'),          # ✅
+    path('api/logout_all/', views.LogoutAllView.as_view(), name='logout_all')# ✅
 ]
 
 from django.http import JsonResponse

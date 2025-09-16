@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-
+from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -112,6 +112,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework.authtoken',  # Pour l'authentification
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',  # Autorisation des requêtes depuis Flutter #added
 
 
@@ -232,6 +233,15 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend'
     ]
 }
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME":  timedelta(minutes=15),  # ajuste
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),      # ajuste
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
 #pour upload des contrats
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

@@ -30,3 +30,52 @@ Watching for file changes with StatReloader
 Watching for file changes with StatReloader
 /Users/yassineelmoudene/Desktop/Devs/avocat_web/api/services.py changed, reloading.
 Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/settings.py changed, reloading.
+Watching for file changes with StatReloader
+/Users/yassineelmoudene/Desktop/Devs/avocat_web/avocat/urls.py changed, reloading.
+Watching for file changes with StatReloader
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"GET /api/clients/ HTTP/1.1" 401 224
+"GET /api/affairejudiciaires/ HTTP/1.1" 401 224
+"GET /api/statutaffaires/ HTTP/1.1" 401 224
+"GET /api/typeclients/ HTTP/1.1" 401 224
+"GET /api/typeaffaires/ HTTP/1.1" 401 224
+"GET /api/fonctionclients/ HTTP/1.1" 401 224
+"POST /api/token/ HTTP/1.1" 200 628
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/classification/?code=1 HTTP/1.1" 200 1431
+"GET /api/classification/?code=11 HTTP/1.1" 200 1431
+"GET /api/classification/?code=1102 HTTP/1.1" 200 28240
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/statutaffaires/ HTTP/1.1" 200 115
+"GET /api/clients/ HTTP/1.1" 200 465
+"GET /api/typeclients/ HTTP/1.1" 200 258
+"GET /api/fonctionclients/ HTTP/1.1" 200 84
+"GET /api/typeaffaires/ HTTP/1.1" 200 897
+"GET /api/affairejudiciaires/ HTTP/1.1" 200 668
+"GET /api/affaires/1/progression/ HTTP/1.1" 200 68
+"GET /api/affaires/1/etape-actuelle/ HTTP/1.1" 200 94
