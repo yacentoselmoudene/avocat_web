@@ -36,7 +36,7 @@ function onRefreshed(newAccess) {
 export function logoutClientSide() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
-  window.location.href = "/login";
+  window.location.href = "https://lmohami.ma/";
 }
 
 export async function logoutServerSide() {
