@@ -3874,7 +3874,8 @@ def password_reset_confirm(request):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # <— au lieu de IsAuthenticated
+
     def post(self, request):
         refresh = request.data.get("refresh")
         if not refresh:
@@ -3882,7 +3883,8 @@ class LogoutView(APIView):
         try:
             RefreshToken(refresh).blacklist()
         except Exception:
-            return Response({"detail": "refresh invalide"}, status=400)
+            # même si invalide/expiré, on renvoie OK pour permettre le cleanup côté client
+            return Response({"detail": "Déconnecté"}, status=205)
         return Response({"detail": "Déconnecté"}, status=205)
 
 class LogoutAllView(APIView):
