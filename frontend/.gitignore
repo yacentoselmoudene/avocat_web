@@ -23,3 +23,8 @@ dist-ssr
 *.sw?
 .env
 avocat-dc133-0a92dc1a0f9e.json
+
+.idea/copilot.data.migration.agent.xml
+.idea/copilot.data.migration.ask.xml
+.idea/copilot.data.migration.ask2agent.xml
+.idea/copilot.data.migration.edit.xml
