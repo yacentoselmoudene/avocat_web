@@ -74,19 +74,19 @@ else:
 
 
 if DEBUG:
-    # Simple local DB (or point to your local MySQL if you prefer)
+    # Local/dev DB (overridable via env for Docker Compose)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': 'cabinetavocat',
-            'USER': 'root',
-            'PASSWORD': 'Bismillah@99',
-            'HOST': 'localhost',
-            'PORT': '3306',
+            'NAME': os.environ.get('DB_NAME', 'cabinetavocat'),
+            'USER': os.environ.get('DB_USER', 'root'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'Bismillah@99'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '3306'),
             "OPTIONS": {
-                    "charset": "utf8mb4",
-                    "init_command": "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci', sql_mode='STRICT_TRANS_TABLES'",
-                },
+                "charset": "utf8mb4",
+                "init_command": "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci', sql_mode='STRICT_TRANS_TABLES'",
+            },
         }
     }
 else:
