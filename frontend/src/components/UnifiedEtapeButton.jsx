@@ -1,14 +1,16 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 const UnifiedEtapeButton = ({
   etapeId,
   affaireId,
   onComplete,
   disabled = false,
-  children = "Terminer l'étape",
+  children = null,
   style = {},
   className = "",
 }) => {
+  const { t } = useTranslation();
   const handleClick = async () => {
     if (disabled) return;
 
@@ -42,7 +44,7 @@ const UnifiedEtapeButton = ({
       className={className}
       type="button"
     >
-      {children}
+      {children || t("Terminer l'étape")}
     </button>
   );
 };

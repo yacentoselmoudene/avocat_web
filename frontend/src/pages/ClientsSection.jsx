@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import api from "../api/axios";
 import ErrorMessage from "../components/ErrorMessage";
 import { useTranslation } from "react-i18next";
+import Select from "react-select";
 
 export default function ClientsSection() {
   const { t, i18n } = useTranslation();
@@ -15,9 +16,15 @@ export default function ClientsSection() {
   const [lastCreatedClientId, setLastCreatedClientId] = useState(null);
   const [adresse, setAdresse] = useState("");
   const [types, setTypes] = useState([]);
+  const [typesSociete, setTypesSociete] = useState([]);
   const [selectedType, setSelectedType] = useState("");
+  const [selectedTypeSociete, setSelectedTypeSociete] = useState("");
+  const [referenceClient, setReferenceClient] = useState("");
+  const [raisonSocialeFr, setRaisonSocialeFr] = useState("");
+  const [raisonSocialeAr, setRaisonSocialeAr] = useState("");
   const [contrat, setContrat] = useState({});
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const [filterType, setFilterType] = useState("");
   const [editingClientId, setEditingClientId] = useState(null);
   const [editNom, setEditNom] = useState("");
@@ -51,6 +58,7 @@ export default function ClientsSection() {
   const [numtel1, setNumtel1] = useState("");
   const [numtel2, setNumtel2] = useState("");
   const [email, setEmail] = useState("");
+  const [referenceError, setReferenceError] = useState("");
 
   const [editPrenom, setEditPrenom] = useState("");
   const [editPrenomFr, setEditPrenomFr] = useState("");
@@ -58,9 +66,71 @@ export default function ClientsSection() {
   const [editAdresse1, setEditAdresse1] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editNumtel1, setEditNumtel1] = useState("");
+  const [editRaisonSocialeFr, setEditRaisonSocialeFr] = useState("");
+  const [editRaisonSocialeAr, setEditRaisonSocialeAr] = useState("");
+  const [editTypeSociete, setEditTypeSociete] = useState("");
 
   const fileInputRef = useRef(null);
-  // Rendu strictement identique du formulaire d'origine
+// verfie la dup de reference
+    const checkDuplicateReference = async (reference) => {
+    if (!reference.trim()) return false;
+
+    try {
+
+        const response = await api.get(`/clients/check-reference/${reference}/`);
+        console.log("Reference check response:", response);
+        return response.data.exists === true;
+    } catch (err) {
+        console.error("Reference check error:", err.response || err);
+
+        return false;
+    }
+};
+  // Fonction de validation
+  const validateForm = () => {
+    const errors = {};
+    
+    // Vérifier si c'est une société
+    const isSociete = selectedType && types.find((t) => String(t.idtypeclient) === String(selectedType))?.libelletypeclient_fr?.toLowerCase() === 'société';
+    
+    // Référence client est obligatoire
+    if (!referenceClient.trim()) {
+      errors.reference = t('La référence client est requise');
+    }
+    
+    //  nom et prénom sont obligatoires (AR + FR) pour les particuliers
+    if (!isSociete) {
+      if (!nomFr.trim() && !nomAr.trim()) {
+        errors.nom = 'Au moins un nom (FR ou AR) est requis';
+      }
+      if (!prenomFr.trim() && !prenomAr.trim()) {
+        errors.prenom = 'Au moins un prénom (FR ou AR) est requis';
+      }
+    } else {
+      // Pour les sociétés, raison sociale est obligatoire
+      if (!raisonSocialeFr.trim() && !raisonSocialeAr.trim()) {
+        errors.raisonSociale = t('Au moins une raison sociale (FR ou AR) est requise');
+      }
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Options pour react-select
+  const typeOptions = types.map(type => ({
+    value: type.idtypeclient,
+    label: i18n.language === 'ar' ? 
+      (type.libelletypeclient_ar || type.libelletypeclient_fr || '') :
+      (type.libelletypeclient_fr || type.libelletypeclient_ar || '')
+  }));
+
+  const typeSocieteOptions = (typesSociete || []).map(ts => ({
+    value: ts.idtypesociete,
+    label: i18n.language === 'ar' ? (ts.libelletypesociete_ar || ts.libelletypesociete_fr || '') : (ts.libelletypesociete_fr || ts.libelletypesociete_ar || '')
+  }));
+
+  //  formulaire
   const renderAddClientForm = () => (
     <form
       onSubmit={AddClient}
@@ -78,42 +148,92 @@ export default function ClientsSection() {
       <h3 style={{ color: "#1a237e", marginBottom: 16 }}>
         {t("Ajouter un client")}
       </h3>
-      <select
-        value={selectedType}
-        onChange={(e) => setSelectedType(e.target.value)}
-        required
-        style={{
-          width: "100%",
-          fontSize: 16,
-          marginBottom: 8,
-          padding: 12,
-          background: "#fff",
-          color: "#333",
-          border: "1px solid #e0e0e0",
-          borderRadius: 4,
-        }}
-      >
-        <option value="">{t("Sélectionner un type de client")}</option>
-        {types.map((typeItem) => (
-          <option key={typeItem.idtypeclient} value={typeItem.idtypeclient}>
-            {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
-          </option>
-        ))}
-      </select>
+      <div style={{ marginBottom: 8 }}>
+        <Select
+          value={typeOptions.find(option => option.value === selectedType)}
+          onChange={(selected) => setSelectedType(selected?.value || '')}
+          options={typeOptions}
+          placeholder={t("Sélectionner un type de client")}
+          isSearchable={true}
+          isClearable={true}
+          styles={{
+            control: (provided, state) => ({
+              ...provided,
+              fontSize: 16,
+              minHeight: '48px',
+              border: 'none',
+              borderRadius: '4px',
+              boxShadow: 'none',
+              '&:hover': {
+                border: 'none',
+              },
+              ...(state.isFocused && {
+                border: 'none',
+                boxShadow: 'none',
+              }),
+            }),
+            placeholder: (provided) => ({
+              ...provided,
+              color: '#999',
+            }),
+            indicatorSeparator: () => ({
+              display: 'none',
+            }),
+            dropdownIndicator: (provided) => ({
+              ...provided,
+              color: '#999',
+            }),
+          }}
+        />
+      </div>
+      {/* Référence client */}
+        <input
+  placeholder={i18n.language === 'ar' ? "المرجع" : t("Référence")}
+  value={referenceClient}
+  onChange={(e) => {
+    setReferenceClient(e.target.value);
+    setReferenceError(""); // Clear error when user types
+  }}
+  style={{
+    width: "100%",
+    fontSize: 16,
+    marginBottom: referenceError ? 0 : 8,
+    padding: 12,
+    background: "#fff",
+    color: "#333",
+    border: referenceError ? "2px solid #e74c3c" : "none",
+    borderRadius: 4,
+  }}
+  autoComplete="off"
+/>
+{referenceError && (
+  <div style={{
+    color: "#e74c3c",
+    fontSize: "14px",
+    marginTop: "4px",
+    marginBottom: "8px",
+    padding: "0 4px",
+  }}>
+    {referenceError}
+  </div>
+)}
+
+      {/* Si société: nom société + type société; sinon: nom/prénom */}
+      {!isSociete && (
+        <>
       {/* Nom - Français et Arabe */}
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
           placeholder={t("Nom (Français)")}
           value={nomFr}
           onChange={(e) => setNomFr(e.target.value)}
-          required
           style={{
             flex: 1,
             fontSize: 16,
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
           }}
           autoComplete="off"
@@ -122,14 +242,13 @@ export default function ClientsSection() {
           placeholder="النسب"
           value={nomAr}
           onChange={(e) => setNomAr(e.target.value)}
-          required
           style={{
             flex: 1,
             fontSize: 16,
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
             direction: "rtl",
             textAlign: "right",
@@ -149,7 +268,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
           }}
           autoComplete="off"
@@ -164,7 +283,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
             direction: "rtl",
             textAlign: "right",
@@ -172,6 +291,72 @@ export default function ClientsSection() {
           autoComplete="off"
         />
       </div>
+        </>
+      )}
+
+      {isSociete && (
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            <input
+              placeholder={t("Raison sociale (Français)")}
+              value={raisonSocialeFr}
+              onChange={(e) => setRaisonSocialeFr(e.target.value)}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                padding: 12,
+                background: "#fff",
+                color: "#333",
+                border: validationErrors.raisonSociale ? "2px solid #e74c3c" : "none",
+                borderRadius: 4,
+              }}
+              autoComplete="off"
+            />
+            <input
+              placeholder={"الاسم التجاري"}
+              value={raisonSocialeAr}
+              onChange={(e) => setRaisonSocialeAr(e.target.value)}
+              style={{
+                flex: 1,
+                fontSize: 16,
+                padding: 12,
+                background: "#fff",
+                color: "#333",
+                border: validationErrors.raisonSociale ? "2px solid #e74c3c" : "none",
+                borderRadius: 4,
+                direction: "rtl",
+                textAlign: "right",
+              }}
+              autoComplete="off"
+            />
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <Select
+              value={typeSocieteOptions.find(option => option.value === selectedTypeSociete) || null}
+              onChange={(selected) => setSelectedTypeSociete(selected?.value || '')}
+              options={typeSocieteOptions}
+              placeholder={t("Type de société (SARL, SA, ...)")}
+              isSearchable={true}
+              isClearable={true}
+              styles={{
+                control: (provided, state) => ({
+                  ...provided,
+                  fontSize: 16,
+                  minHeight: '48px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  boxShadow: 'none',
+                  '&:hover': { border: 'none' },
+                  ...(state.isFocused && { border: 'none', boxShadow: 'none' }),
+                }),
+                placeholder: (provided) => ({ ...provided, color: '#999' }),
+                indicatorSeparator: () => ({ display: 'none' }),
+                dropdownIndicator: (provided) => ({ ...provided, color: '#999' }),
+              }}
+            />
+          </div>
+        </>
+      )}
       {/* Adresse 1 - Français et Arabe */}
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
@@ -184,7 +369,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
           }}
           autoComplete="off"
@@ -199,7 +384,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
             direction: "rtl",
             textAlign: "right",
@@ -219,7 +404,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
           }}
           autoComplete="off"
@@ -234,7 +419,7 @@ export default function ClientsSection() {
             padding: 12,
             background: "#fff",
             color: "#333",
-            border: "1px solid #e0e0e0",
+            border: "none",
             borderRadius: 4,
             direction: "rtl",
             textAlign: "right",
@@ -361,6 +546,23 @@ export default function ClientsSection() {
           </div>
         </div>
       )}
+      {/* Messages d'erreur de validation */}
+      {Object.keys(validationErrors).length > 0 && (
+        <div
+          style={{
+            color: "#e74c3c",
+            marginBottom: 16,
+            padding: "8px 12px",
+            background: "#f5f6fa",
+            borderRadius: 4,
+            border: "1px solid #e74c3c",
+          }}
+        >
+          {Object.values(validationErrors).map((error, index) => (
+            <div key={index}>{error}</div>
+          ))}
+        </div>
+      )}
       {error && (
         <div
           style={{
@@ -407,6 +609,26 @@ export default function ClientsSection() {
     setContratFile(e.target.files[0]);
   };
 
+  const isTypeIdSociete = (typeId) => {
+    const id = typeof typeId === "object" ? typeId?.idtypeclient : Number(typeId);
+    const typeObj = types.find((t) => t.idtypeclient === id);
+    const label = (
+      typeObj?.libelletypeclient_fr || typeObj?.libelletypeclient || ""
+    )
+      .toString()
+      .toLowerCase();
+    return label === "société";
+  };
+
+  // Détermine si la ligne en édition est une société, en se basant sur la valeur sélectionnée (editType) ou sur le client.
+
+  const isSocieteForEdit = (client) => {
+    if (editType !== undefined && editType !== null && String(editType) !== "") {
+      return isTypeIdSociete(editType);
+    }
+    return getTypeLabel(client).toLowerCase() === 'société';
+  };
+
   function isValidMoroccanPhone(phone) {
     //  0 ou +212 +9
     return /^(0|\+212)[5-7][0-9]{8}$/.test(phone);
@@ -445,13 +667,17 @@ export default function ClientsSection() {
         setTypes(res.data);
       })
       .catch(() => {});
+    api
+      .get("typesocietes/")
+      .then((res) => setTypesSociete(res.data))
+      .catch(() => {});
   }, []);
 
   // Effet pour déclencher la recherche avec un délai
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       fetchClients(search, filterType);
-    }, 300); // Délai de 300ms pour éviter trop de requêtes
+    }, 300); // Délai de 300ms
 
     return () => clearTimeout(timeoutId);
   }, [search, filterType]);
@@ -471,122 +697,107 @@ export default function ClientsSection() {
   useEffect(() => {}, [i18n.language]);
 
   const AddClient = async (e) => {
-    e.preventDefault();
-    setError("");
-    setSuccess("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setSuccess("");
+  setReferenceError("");
+  setValidationErrors({});
+  setLoading(true);
 
-    // Validation téléphone
-    if (!isValidMoroccanPhone(numtel1)) {
-      setError(
-        t("Le numéro de téléphone 1 n'est pas valide (format marocain) !"),
-      );
+  try {
+    // Validation du formulaire
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
+
+    // Vérification des numéros de téléphone
+    if (numtel1 && !isValidMoroccanPhone(numtel1)) {
+      setError(t("Le numéro de téléphone 1 n'est pas valide (format marocain) !"));
       setLoading(false);
       return;
     }
     if (numtel2 && !isValidMoroccanPhone(numtel2)) {
-      setError(
-        t("Le numéro de téléphone 2 n'est pas valide (format marocain) !"),
-      );
+      setError(t("Le numéro de téléphone 2 n'est pas valide (format marocain) !"));
       setLoading(false);
       return;
     }
 
-    const username = (nomFr || nomAr || nom).replace(/\s+/g, "").toLowerCase();
-    
-    // Validation du username
+    // Vérification de la référence dupliquée
+    if (referenceClient.trim()) {
+            const isDuplicate = await checkDuplicateReference(referenceClient);
+            console.log("Reference check result:", isDuplicate);
+            if (isDuplicate) {
+                setReferenceError(t("Cette référence client existe déjà"));
+                setLoading(false);
+                return;
+            }
+        }
+    // Préparation des données
+    const isSociete = selectedType && types.find((t) => String(t.idtypeclient) === String(selectedType))?.libelletypeclient_fr?.toLowerCase() === 'société';
+
+    const usernameBase = isSociete ? (raisonSocialeFr || raisonSocialeAr) : (nomFr || nomAr || nom);
+    const username = (usernameBase || '').replace(/\s+/g, "").toLowerCase();
+
     if (!username) {
       setError(t("Le nom est requis pour générer un nom d'utilisateur"));
       setLoading(false);
       return;
     }
-    
-    const selectedTypeObj = types.find((t) => t.idtypeclient == selectedType);
-    const selectedTypeLabel = (
-      types.find((t) => String(t.idtypeclient) === String(selectedType))
-        ?.libelletypeclient ?? ''
-    ).toLowerCase();
-    
-    // Vérifier si c'est une société par ID (plus fiable que par libellé)
-    const isSociete = selectedType && types.find((t) => String(t.idtypeclient) === String(selectedType))?.libelletypeclient_fr?.toLowerCase() === 'société';
 
-    try {
-      const typeClientId =
-        typeof selectedType === "object"
-          ? selectedType.idtypeclient
-          : Number(selectedType);
+    const typeClientId = typeof selectedType === "object" ? selectedType.idtypeclient : Number(selectedType);
 
-      //  FormData pour l'envoi de fichier
-      const formData = new FormData();
-      formData.append("nomclient_fr", nomFr);
-      formData.append("nomclient_ar", nomAr);
-      formData.append("adresseclient", adresse);
-      formData.append("adresse1_fr", adresse1Fr);
-      formData.append("adresse1_ar", adresse1Ar);
-      formData.append("adresse2_fr", adresse2Fr);
-      formData.append("adresse2_ar", adresse2Ar);
-      formData.append("idtypeclient", typeClientId);
-      formData.append("username", username);
-      formData.append("password", password);
-      formData.append("is_societe", isSociete);
-      formData.append("adresse1", adresse1);
-      formData.append("adresse2", adresse2);
-      formData.append("numtel1", numtel1);
-      formData.append("numtel2", numtel2);
-      formData.append("email", email);
-      formData.append("prenomclient_fr", prenomFr);
-      formData.append("prenomclient_ar", prenomAr);
+    // Création du FormData
+    const formData = new FormData();
+    formData.append("nomclient_fr", nomFr);
+    formData.append("nomclient_ar", nomAr);
+    formData.append("adresseclient", adresse);
+    formData.append("adresse1_fr", adresse1Fr);
+    formData.append("adresse1_ar", adresse1Ar);
+    formData.append("adresse2_fr", adresse2Fr);
+    formData.append("adresse2_ar", adresse2Ar);
+    formData.append("idtypeclient", typeClientId);
+    formData.append("username", username);
+    formData.append("password", password);
+    formData.append("is_societe", isSociete);
+    formData.append("adresse1", adresse1);
+    formData.append("adresse2", adresse2);
+    formData.append("numtel1", numtel1);
+    formData.append("numtel2", numtel2);
+    formData.append("email", email);
+    formData.append("prenomclient_fr", isSociete ? '' : prenomFr);
+    formData.append("prenomclient_ar", isSociete ? '' : prenomAr);
+    formData.append("reference_client", referenceClient);
+    formData.append("raison_sociale_fr", isSociete ? raisonSocialeFr : '');
+    formData.append("raison_sociale_ar", isSociete ? raisonSocialeAr : '');
+    formData.append("idtypesociete", isSociete ? selectedTypeSociete : '');
 
-      if (isSociete) {
-        if (contratFile) {
-          formData.append("fichier", contratFile);
+    if (isSociete && contratFile) {
+      formData.append("fichier", contratFile);
+    }
+
+    // Envoi des données
+    const response = await api.post('create-client/', formData);
+        console.log("Create client response:", response);
+
+
+        if (response.status === 201) {
+            setSuccess(response.data.message || t("Client créé avec succès"));
+            fetchClients();
+            // Reset form
+            setShowAddForm(false);
+        } else {
+            setError(response.data.message || t("Une erreur s'est produite"));
         }
-      }
-
-      const res = await api.post("create-client/", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setLastCreatedPassword(password); // stockage du password
-      setLastCreatedClientId(res.data.client.idclient); // stockage de l'ID du client créé
-      setNom("");
-      setNomFr("");
-      setNomAr("");
-      setAdresse("");
-      setSelectedType("");
-      setContrat({});
-      setContratFile(null); // Réinitialise le fichier sélectionné
-      setPassword("");
-      setAdresse1("");
-      setAdresse1Fr("");
-      setAdresse1Ar("");
-      setAdresse2("");
-      setAdresse2Fr("");
-      setAdresse2Ar("");
-      setNumtel1("");
-      setNumtel2("");
-      setEmail("");
-      setPrenom("");
-      setPrenomFr("");
-      setPrenomAr("");
-      fetchClients();
-      setSuccess(t("Client ajouté avec succès !"));
-      setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      console.log("Erreur complète:", err.response?.data);
-      setError(
-        "Erreur détaillée: " +
-          (err.response?.data?.error ||
-            JSON.stringify(err.response?.data) ||
-            err.message),
-      );
+        console.error("Error in AddClient:", err);
+        setError(err.response?.data?.message || t("Une erreur s'est produite"));
     }
     setLoading(false);
-  };
-
+};
   // recuperer le libellé du type d'un client
   const getTypeLabel = (client) => {
-    // Si le backend renvoie déjà le libellé type_client
+    //  backend :  libellé type_client
     if (client.type_client) {
       // Si c'est un objet avec les champs fr et ar
       if (typeof client.type_client === 'object') {
@@ -599,7 +810,7 @@ export default function ClientsSection() {
       return t(lower);
     }
 
-    // Sinon on cherche dans la liste des types
+    // Sinon  cherche dans la liste des types
     const clientTypeId =
       typeof client.idtypeclient === "object"
         ? client.idtypeclient.idtypeclient
@@ -622,6 +833,74 @@ export default function ClientsSection() {
     return clientTypeId ?? "";
   };
 
+  // Détection  société (indépendante de la langue)
+  const isSocieteClientRow = (client) => {
+    const typeId =
+      typeof client.idtypeclient === 'object'
+        ? client.idtypeclient?.idtypeclient
+        : client.idtypeclient;
+    if (typeId !== undefined && typeId !== null && types.length > 0) {
+      return isTypeIdSociete(typeId);
+    }
+    // Fallback si pas d'ID: inspecter l'objet type_client côté backend
+    if (client.type_client && typeof client.type_client === 'object') {
+      const fr = String(client.type_client.libelletypeclient_fr || '').toLowerCase();
+      const ar = String(client.type_client.libelletypeclient_ar || '');
+      return fr === 'société' || fr === 'societe' || ar === 'شركة';
+    }
+    const raw = String(client.type_client || '').toLowerCase();
+    return raw === 'société' || raw === 'societe';
+  };
+
+  // Fonction pour afficher le nom/raison sociale selon le type de client
+  const getDisplayName = (client) => {
+    const isSociete = isSocieteClientRow(client);
+    
+    if (isSociete) {
+      // Pour les sociétés : afficher raison sociale
+      const raisonSociale = i18n.language === 'ar' ? 
+        (client.raison_sociale_ar || client.raison_sociale_fr || '') :
+        (client.raison_sociale_fr || client.raison_sociale_ar || '');
+      
+      // Ajouter le type de société si disponible : données du backend
+      if (client.type_societe) {
+        const typeLabel = i18n.language === 'ar' ? 
+          (client.type_societe.libelletypesociete_ar || client.type_societe.libelletypesociete_fr || '') :
+          (client.type_societe.libelletypesociete_fr || client.type_societe.libelletypesociete_ar || '');
+        return `${raisonSociale} (${typeLabel})`;
+      }
+      
+      // Fallback : chercher dans la liste locale
+      if (client.idtypesociete && typesSociete.length > 0) {
+        const typeSociete = typesSociete.find(ts => ts.idtypesociete === client.idtypesociete);
+        if (typeSociete) {
+          const typeLabel = i18n.language === 'ar' ? 
+            (typeSociete.libelletypesociete_ar || typeSociete.libelletypesociete_fr || '') :
+            (typeSociete.libelletypesociete_fr || typeSociete.libelletypesociete_ar || '');
+          return `${raisonSociale} (${typeLabel})`;
+        }
+      }
+      
+      return raisonSociale || t('Société sans nom');
+    } else {
+      // Pour les particuliers : afficher nom + prénom
+      const nom = i18n.language === 'ar' ? 
+        (client.nomclient_ar || client.nomclient_fr || '') :
+        (client.nomclient_fr || client.nomclient_ar || '');
+      const prenom = i18n.language === 'ar' ? 
+        (client.prenomclient_ar || client.prenomclient_fr || '') :
+        (client.prenomclient_fr || client.prenomclient_ar || '');
+      
+      const full = `${nom} ${prenom}`.trim();
+      if (full) return full;
+      // Si nom/prénom vides mais raison sociale existe , l'utiliser
+      const rsFallback = i18n.language === 'ar'
+        ? (client.raison_sociale_ar || client.raison_sociale_fr || '')
+        : (client.raison_sociale_fr || client.raison_sociale_ar || '');
+      return rsFallback || t('Client sans nom');
+    }
+  };
+
   //  filtrés par l'API
   const filteredClients = clients;
 
@@ -641,6 +920,11 @@ export default function ClientsSection() {
     setEditAdresse2Ar(client.adresse2_ar || "");
     setEditEmail(client.email || "");
     setEditNumtel1(client.numtel1 || "");
+    setEditRaisonSocialeFr(client.raison_sociale_fr || "");
+    setEditRaisonSocialeAr(client.raison_sociale_ar || "");
+    setEditTypeSociete(
+      client.idtypesociete || client.type_societe?.idtypesociete || ""
+    );
     //   editType est l'id
     setEditType(
       typeof client.idtypeclient === "object"
@@ -666,6 +950,9 @@ export default function ClientsSection() {
     setEditEmail("");
     setEditNumtel1("");
     setEditType("");
+    setEditRaisonSocialeFr("");
+    setEditRaisonSocialeAr("");
+    setEditTypeSociete("");
   };
 
   // valider la modification
@@ -675,18 +962,38 @@ export default function ClientsSection() {
       const typeClientId =
         typeof editType === "object" ? editType.idtypeclient : Number(editType);
 
-      await api.patch(`/clients/${id}/`, {
-        nomclient_fr: editNomFr,
-        nomclient_ar: editNomAr,
-        prenomclient_fr: editPrenomFr,
-        prenomclient_ar: editPrenomAr,
+      const updateData = {
         adresseclient: editAdresse,
         adresse1_fr: editAdresse1Fr,
         adresse1_ar: editAdresse1Ar,
         adresse2_fr: editAdresse2Fr,
         adresse2_ar: editAdresse2Ar,
         idtypeclient: typeClientId,
-      });
+        email: editEmail,
+        numtel1: editNumtel1,
+      };
+
+      if (isTypeIdSociete(typeClientId)) {
+        updateData["raison_sociale_fr"] = editRaisonSocialeFr;
+        updateData["raison_sociale_ar"] = editRaisonSocialeAr;
+        updateData["idtypesociete"] = editTypeSociete || null;
+
+        updateData["nomclient_fr"] = "";
+        updateData["nomclient_ar"] = "";
+        updateData["prenomclient_fr"] = "";
+        updateData["prenomclient_ar"] = "";
+      } else {
+        updateData["nomclient_fr"] = editNomFr;
+        updateData["nomclient_ar"] = editNomAr;
+        updateData["prenomclient_fr"] = editPrenomFr;
+        updateData["prenomclient_ar"] = editPrenomAr;
+
+        updateData["raison_sociale_fr"] = "";
+        updateData["raison_sociale_ar"] = "";
+        updateData["idtypesociete"] = null;
+      }
+
+      await api.patch(`/clients/${id}/`, updateData);
       cancelEdit();
       fetchClients();
     } catch (err) {
@@ -790,48 +1097,53 @@ export default function ClientsSection() {
           style={{
             padding: 8,
             borderRadius: 4,
-            border: "1px solid #e0e0e0",
+            border: "none",
             background: "#f5f6fa",
             color: "#333",
             fontSize: 15,
             width: 220,
           }}
         />
-        {/*         menu de filtrage */}
-        <select
-          value={filterType}
-          onChange={(e) => {
-            console.log("Filtrage changé:", e.target.value);
-            setFilterType(e.target.value);
-          }}
-          style={{
-            height: 35,
-            padding: "4px 8px",
-            background: "#fff",
-            color: "#333",
-            border: "1px solid #e0e0e0",
-            borderRadius: 4,
-            fontSize: 14,
-            minWidth: 120,
-          }}
-        >
-          <option value="">{t("Tous les types")}</option>
-          {types.map((typeItem) => {
-            const typeFr = (typeItem?.libelletypeclient_fr ?? '').toLowerCase();
-            const typeAr = (typeItem?.libelletypeclient_ar ?? '').toLowerCase();
-            return (
-              <option
-                key={typeItem.idtypeclient}
-                value={typeFr}
-              >
-                {i18n.language === 'ar' ? 
-                  (typeItem?.libelletypeclient_ar || typeItem?.libelletypeclient_fr || '') :
-                  (typeItem?.libelletypeclient_fr || typeItem?.libelletypeclient_ar || '')
-                }
-              </option>
-            );
-          })}
-        </select>
+        {/* Filtre par type (react-select avec recherche) */}
+        <div style={{ minWidth: 220 }}>
+          <Select
+            value={(types || []).map(typeItem => ({
+              value: (typeItem?.libelletypeclient_fr ?? '').toLowerCase(),
+              label: i18n.language === 'ar' ? 
+                (typeItem?.libelletypeclient_ar || typeItem?.libelletypeclient_fr || '') :
+                (typeItem?.libelletypeclient_fr || typeItem?.libelletypeclient_ar || '')
+            })).find(opt => opt.value === filterType) || null}
+            onChange={(selected) => {
+              const v = selected?.value || '';
+              console.log('Filtrage changé:', v);
+              setFilterType(v);
+            }}
+            options={(types || []).map(typeItem => ({
+              value: (typeItem?.libelletypeclient_fr ?? '').toLowerCase(),
+              label: i18n.language === 'ar' ? 
+                (typeItem?.libelletypeclient_ar || typeItem?.libelletypeclient_fr || '') :
+                (typeItem?.libelletypeclient_fr || typeItem?.libelletypeclient_ar || '')
+            }))}
+            placeholder={t("Tous les types")}
+            isSearchable={true}
+            isClearable={true}
+            styles={{
+              control: (provided, state) => ({
+                ...provided,
+                minHeight: '35px',
+                border: 'none',
+                borderRadius: '4px',
+                boxShadow: 'none',
+                '&:hover': { border: 'none' },
+                ...(state.isFocused && { border: 'none', boxShadow: 'none' }),
+              }),
+              placeholder: (provided) => ({ ...provided, color: '#999' }),
+              indicatorSeparator: () => ({ display: 'none' }),
+              dropdownIndicator: (provided) => ({ ...provided, color: '#999' }),
+              menu: (provided) => ({ ...provided, zIndex: 5 })
+            }}
+          />
+        </div>
       </div>
       {/* Tableau des clients */}
       <table
@@ -859,20 +1171,9 @@ export default function ClientsSection() {
                 borderBottom: "2px solid #1976d2",
               }}
             >
-              {t("Nom")}
+              {t("Identité")}
             </th>
-            <th
-              style={{
-                padding: "12px 8px",
-                color: "#1a237e",
-                fontWeight: "bold",
-                textAlign: i18n.language === 'ar' ? "right" : "left",
-                direction: i18n.language === 'ar' ? "rtl" : "ltr",
-                borderBottom: "2px solid #1976d2",
-              }}
-            >
-              {t("Prénom")}
-            </th>
+            
             <th
               style={{
                 padding: "12px 8px",
@@ -949,76 +1250,115 @@ export default function ClientsSection() {
               >
                 {/* <td style={{ padding: "8px", color: "#333" }}>{c.idclient}</td> */}
                 <td>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <input
-                      placeholder={t("Nom (Français)")}
-                      value={editNomFr || ""}
-                      onChange={(e) => setEditNomFr(e.target.value)}
-                      style={{
-                        width: "100%",
-                        borderRadius: 4,
-                        border: "2px solid #e0e0e0",
-                        background: "#fff",
-                        color: "#333",
-                        padding: "8px",
-                        fontSize: 16,
-                        outline: "none",
-                      }}
-                    />
-                    <input
-                      placeholder="النسب"
-                      value={editNomAr || ""}
-                      onChange={(e) => setEditNomAr(e.target.value)}
-                      style={{
-                        width: "100%",
-                        borderRadius: 4,
-                        border: "2px solid #e0e0e0",
-                        background: "#fff",
-                        color: "#333",
-                        padding: "8px",
-                        fontSize: 16,
-                        outline: "none",
-                        direction: "rtl",
-                        textAlign: "right",
-                      }}
-                    />
-                  </div>
-                </td>
-                <td>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <input
-                      placeholder={t("Prénom (Français)")}
-                      value={editPrenomFr || ""}
-                      onChange={(e) => setEditPrenomFr(e.target.value)}
-                      style={{
-                        width: "100%",
-                        borderRadius: 4,
-                        border: "2px solid #e0e0e0",
-                        background: "#fff",
-                        color: "#333",
-                        padding: "8px",
-                        fontSize: 16,
-                        outline: "none",
-                      }}
-                    />
-                    <input
-                      placeholder="الاسم"
-                      value={editPrenomAr || ""}
-                      onChange={(e) => setEditPrenomAr(e.target.value)}
-                      style={{
-                        width: "100%",
-                        borderRadius: 4,
-                        border: "2px solid #e0e0e0",
-                        background: "#fff",
-                        color: "#333",
-                        padding: "8px",
-                        fontSize: 16,
-                        outline: "none",
-                        direction: "rtl",
-                        textAlign: "right",
-                      }}
-                    />
-                  </div>
+                  {isSocieteForEdit(c) ? (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <input
+                        placeholder={t("Raison sociale (Français)")}
+                        value={editRaisonSocialeFr || ""}
+                        onChange={(e) => setEditRaisonSocialeFr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        placeholder="الاسم التجاري"
+                        value={editRaisonSocialeAr || ""}
+                        onChange={(e) => setEditRaisonSocialeAr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                          direction: "rtl",
+                          textAlign: "right",
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <input
+                        placeholder={t("Nom (Français)")}
+                        value={editNomFr || ""}
+                        onChange={(e) => setEditNomFr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        placeholder="النسب"
+                        value={editNomAr || ""}
+                        onChange={(e) => setEditNomAr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                          direction: "rtl",
+                          textAlign: "right",
+                        }}
+                      />
+                      <input
+                        placeholder={t("Prénom (Français)")}
+                        value={editPrenomFr || ""}
+                        onChange={(e) => setEditPrenomFr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                        }}
+                      />
+                      <input
+                        placeholder="الاسم"
+                        value={editPrenomAr || ""}
+                        onChange={(e) => setEditPrenomAr(e.target.value)}
+                        style={{
+                          flex: 1,
+                          minWidth: 160,
+                          borderRadius: 4,
+                          border: "2px solid #e0e0e0",
+                          background: "#fff",
+                          color: "#333",
+                          padding: "8px",
+                          fontSize: 16,
+                          outline: "none",
+                          direction: "rtl",
+                          textAlign: "right",
+                        }}
+                      />
+                    </div>
+                  )}
                 </td>
                 <td>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -1113,6 +1453,30 @@ export default function ClientsSection() {
                       </option>
                     ))}
                   </select>
+                  {isSocieteForEdit(c) && (
+                    <select
+                      value={editTypeSociete}
+                      onChange={(e) => setEditTypeSociete(e.target.value)}
+                      style={{
+                        marginTop: 8,
+                        width: "100%",
+                        borderRadius: 4,
+                        border: "2px solid #e0e0e0",
+                        background: "#fff",
+                        color: "#333",
+                        padding: "8px",
+                        fontSize: 16,
+                        outline: "none",
+                      }}
+                    >
+                      <option value="">{t("Type de société")}</option>
+                      {typesSociete.map((ts) => (
+                        <option key={ts.idtypesociete} value={ts.idtypesociete}>
+                          {i18n.language === 'ar' ? (ts.libelletypesociete_ar || ts.libelletypesociete_fr || '') : (ts.libelletypesociete_fr || ts.libelletypesociete_ar || '')}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </td>
                 <td
                   style={{
@@ -1170,7 +1534,37 @@ export default function ClientsSection() {
                   textAlign: i18n.language === 'ar' ? "right" : "left",
                   direction: i18n.language === 'ar' ? "rtl" : "ltr"
                 }}>
-                  {i18n.language === 'ar' ? (c.nomclient_ar || c.nomclient_fr || c.nomclient) : (c.nomclient_fr || c.nomclient_ar || c.nomclient)}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {getDisplayName(c)}
+                    </div>
+                    {getTypeLabel(c).toLowerCase() === 'société' && (
+                      <div style={{ color: '#666', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {(c.type_societe
+                          ? (i18n.language === 'ar'
+                              ? (c.type_societe.libelletypesociete_ar || c.type_societe.libelletypesociete_fr || '')
+                              : (c.type_societe.libelletypesociete_fr || c.type_societe.libelletypesociete_ar || ''))
+                          : (() => {
+                              if (c.idtypesociete && typesSociete.length > 0) {
+                                const ts = typesSociete.find(x => x.idtypesociete === c.idtypesociete);
+                                if (ts) {
+                                  return i18n.language === 'ar'
+                                    ? (ts.libelletypesociete_ar || ts.libelletypesociete_fr || '')
+                                    : (ts.libelletypesociete_fr || ts.libelletypesociete_ar || '');
+                                }
+                              }
+                              return '';
+                            })()
+                        )}
+                        {c.reference_client ? ` • ${i18n.language === 'ar' ? 'مرجع' : 'Réf'}: ${c.reference_client}` : ''}
+                      </div>
+                    )}
+                    {getTypeLabel(c).toLowerCase() !== 'société' && c.reference_client && (
+                      <div style={{ color: '#666', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {`${i18n.language === 'ar' ? 'مرجع' : 'Réf'}: ${c.reference_client}`}
+                      </div>
+                    )}
+                  </div>
                 </td>
                 <td style={{ 
                   padding: "8px", 
@@ -1178,7 +1572,9 @@ export default function ClientsSection() {
                   textAlign: i18n.language === 'ar' ? "right" : "left",
                   direction: i18n.language === 'ar' ? "rtl" : "ltr"
                 }}>
-                  {i18n.language === 'ar' ? (c.prenomclient_ar || c.prenomclient_fr) : (c.prenomclient_fr || c.prenomclient_ar)}
+                  {i18n.language === 'ar'
+                    ? (c.adresse1_ar || c.adresse1_fr || c.adresse1 || '—')
+                    : (c.adresse1_fr || c.adresse1_ar || c.adresse1 || '—')}
                 </td>
                 <td style={{ 
                   padding: "8px", 
@@ -1186,20 +1582,15 @@ export default function ClientsSection() {
                   textAlign: i18n.language === 'ar' ? "right" : "left",
                   direction: i18n.language === 'ar' ? "rtl" : "ltr"
                 }}>
-                  {i18n.language === 'ar' ? (c.adresse1_ar || c.adresse1_fr || c.adresse1) : (c.adresse1_fr || c.adresse1_ar || c.adresse1)}
+                  {c.email || '—'}
                 </td>
+                
                 <td style={{ 
                   padding: "8px", 
                   color: "#333",
                   textAlign: i18n.language === 'ar' ? "right" : "left",
                   direction: i18n.language === 'ar' ? "rtl" : "ltr"
-                }}>{c.email}</td>
-                <td style={{ 
-                  padding: "8px", 
-                  color: "#333",
-                  textAlign: i18n.language === 'ar' ? "right" : "left",
-                  direction: i18n.language === 'ar' ? "rtl" : "ltr"
-                }}>{c.numtel1}</td>
+                }}>{c.numtel1 || '—'}</td>
                 <td style={{ 
                   padding: "8px", 
                   color: "#333",
@@ -1340,6 +1731,9 @@ export default function ClientsSection() {
           <div>
             <b>{t("Type")}:</b> {getTypeLabel(detailClient)}
           </div>
+          <div>
+            <b>{t("Référence")}:</b> {detailClient.reference_client || '—'}
+          </div>
           
           {/* Affichage du contrat */}
           {detailClient.contrat && (
@@ -1401,42 +1795,57 @@ export default function ClientsSection() {
               aria-hidden
             />
           )}
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            required
-            style={{
-              width: "100%",
-              fontSize: 16,
-              marginBottom: 8,
-              padding: 12,
-              background: "#fff",
-              color: "#333",
-              border: "1px solid #e0e0e0",
-              borderRadius: 4,
-            }}
-          >
-            <option value="">{t("Sélectionner un type de client")}</option>
-            {types.map((typeItem) => (
-              <option key={typeItem.idtypeclient} value={typeItem.idtypeclient}>
-                {t((typeItem?.libelletypeclient ?? '').toLowerCase())}
-              </option>
-            ))}
-          </select>
+          <div style={{ marginBottom: 8 }}>
+            <Select
+              value={typeOptions.find(option => option.value === selectedType)}
+              onChange={(selected) => setSelectedType(selected?.value || '')}
+              options={typeOptions}
+              placeholder={t("Sélectionner un type de client")}
+              isSearchable={true}
+              isClearable={true}
+              styles={{
+                control: (provided, state) => ({
+                  ...provided,
+                  fontSize: 16,
+                  minHeight: '48px',
+                  border: 'none',
+                  borderRadius: '4px',
+                  boxShadow: 'none',
+                  '&:hover': {
+                    border: 'none',
+                  },
+                  ...(state.isFocused && {
+                    border: 'none',
+                    boxShadow: 'none',
+                  }),
+                }),
+                placeholder: (provided) => ({
+                  ...provided,
+                  color: '#999',
+                }),
+                indicatorSeparator: () => ({
+                  display: 'none',
+                }),
+                dropdownIndicator: (provided) => ({
+                  ...provided,
+                  color: '#999',
+                }),
+              }}
+            />
+          </div>
           {/* Nom - Français et Arabe */}
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <input
               placeholder={t("Nom (Français)")}
               value={nomFr}
               onChange={(e) => setNomFr(e.target.value)}
-              required
               style={{
                 flex: 1,
                 fontSize: 16,
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
               }}
               autoComplete="off"
@@ -1445,14 +1854,13 @@ export default function ClientsSection() {
               placeholder="النسب"
               value={nomAr}
               onChange={(e) => setNomAr(e.target.value)}
-              required
               style={{
                 flex: 1,
                 fontSize: 16,
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
                 direction: "rtl",
                 textAlign: "right",
@@ -1472,7 +1880,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
               }}
               autoComplete="off"
@@ -1487,7 +1895,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
                 direction: "rtl",
                 textAlign: "right",
@@ -1507,7 +1915,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
               }}
               autoComplete="off"
@@ -1522,7 +1930,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
                 direction: "rtl",
                 textAlign: "right",
@@ -1542,7 +1950,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
               }}
               autoComplete="off"
@@ -1557,7 +1965,7 @@ export default function ClientsSection() {
                 padding: 12,
                 background: "#fff",
                 color: "#333",
-                border: "1px solid #e0e0e0",
+                border: "none",
                 borderRadius: 4,
                 direction: "rtl",
                 textAlign: "right",
@@ -1576,7 +1984,7 @@ export default function ClientsSection() {
               padding: 12,
               background: "#fff",
               color: "#333",
-              border: "1px solid #e0e0e0",
+              border: "none",
               borderRadius: 4,
             }}
             autoComplete="off"
@@ -1592,7 +2000,7 @@ export default function ClientsSection() {
               padding: 12,
               background: "#fff",
               color: "#333",
-              border: "1px solid #e0e0e0",
+              border: "none",
               borderRadius: 4,
             }}
             autoComplete="off"
@@ -1609,7 +2017,7 @@ export default function ClientsSection() {
               padding: 12,
               background: "#fff",
               color: "#333",
-              border: "1px solid #e0e0e0",
+              border: "none",
               borderRadius: 4,
             }}
             autoComplete="off"
@@ -1620,7 +2028,6 @@ export default function ClientsSection() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            required
             style={{
               width: "100%",
               fontSize: 16,
@@ -1628,7 +2035,7 @@ export default function ClientsSection() {
               padding: 12,
               background: "#fff",
               color: "#333",
-              border: "1px solid #e0e0e0",
+              border: "none",
               borderRadius: 4,
             }}
             autoComplete="new-password"
@@ -1688,6 +2095,23 @@ export default function ClientsSection() {
                   </button>
                 )}
               </div>
+            </div>
+          )}
+          {/* Messages d'erreur de validation */}
+          {Object.keys(validationErrors).length > 0 && (
+            <div
+              style={{
+                color: "#e74c3c",
+                marginBottom: 16,
+                padding: "8px 12px",
+                background: "#f5f6fa",
+                borderRadius: 4,
+                border: "1px solid #e74c3c",
+              }}
+            >
+              {Object.values(validationErrors).map((error, index) => (
+                <div key={index}>{error}</div>
+              ))}
             </div>
           )}
           {error && (

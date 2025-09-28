@@ -1,7 +1,9 @@
 // frontend/src/api/axios.js
 import axios from "axios";
 import i18n from "../i18n";
+
 import {useState} from "react"; // wherever you init i18n
+
 const ensureSlash = (s) => (s.endsWith("/") ? s : s + "/");
 export const API_BASE = ensureSlash(import.meta.env.VITE_API_URL || "/api");
 export const MEDIA_BASE = ensureSlash(import.meta.env.VITE_MEDIA_URL || "/api/media");

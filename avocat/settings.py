@@ -235,11 +235,12 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME":  timedelta(minutes=15),  # ajuste
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),      # ajuste
+    "ACCESS_TOKEN_LIFETIME":  timedelta(minutes=30),  # ajuste
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),      # ajuste
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
+    "UPDATE_LAST_LOGIN": True,
 }
 
 #pour upload des contrats

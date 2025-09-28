@@ -63,3 +63,9 @@ python manage.py send_rdv_reminders
 
 
 
+
+
+
+
+
+

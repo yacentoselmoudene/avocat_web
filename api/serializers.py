@@ -48,6 +48,7 @@ class ContratSerializer(serializers.ModelSerializer):
 class ClientProfileSerializer(serializers.ModelSerializer):
     contrat = serializers.SerializerMethodField()
     type_client = serializers.SerializerMethodField()
+    type_societe = serializers.SerializerMethodField()
     username = serializers.CharField(source='user.username', read_only=True)
     preferred_language = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
@@ -56,7 +57,8 @@ class ClientProfileSerializer(serializers.ModelSerializer):
         fields = [
             'idclient', 'username', 'nomclient_fr', 'nomclient_ar', 'prenomclient_fr', 'prenomclient_ar', 'email',
             'numtel1', 'numtel2', 'adresse1_fr', 'adresse1_ar', 'adresse2_fr', 'adresse2_ar',
-            'type_client', 'contrat', 'preferred_language'
+            'reference_client', 'raison_sociale_fr', 'raison_sociale_ar', 'idtypesociete',
+            'type_client', 'type_societe', 'contrat', 'preferred_language'
         ]
 
     def get_type_client(self, obj):
@@ -68,6 +70,16 @@ class ClientProfileSerializer(serializers.ModelSerializer):
             'libelletypeclient_fr': obj.idtypeclient.libelletypeclient_fr,
             'libelletypeclient_ar': obj.idtypeclient.libelletypeclient_ar,
             'libelletypeclient': obj.idtypeclient.libelletypeclient_fr or obj.idtypeclient.libelletypeclient_ar or ''
+        }
+
+    def get_type_societe(self, obj):
+        if not obj.idtypesociete:
+            return None
+        return {
+            'idtypesociete': obj.idtypesociete.idtypesociete,
+            'libelletypesociete_fr': obj.idtypesociete.libelletypesociete_fr,
+            'libelletypesociete_ar': obj.idtypesociete.libelletypesociete_ar,
+            'libelletypesociete': obj.idtypesociete.libelletypesociete_fr or obj.idtypesociete.libelletypesociete_ar or ''
         }
 
     def get_contrat(self, obj):
@@ -120,6 +132,12 @@ class OpposantSerializer(serializers.ModelSerializer):
 class ClientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Client
+        fields = '__all__'
+
+
+class TypeSocieteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TypeSociete
         fields = '__all__'
 
 # Serializer principal pour les affaires judiciaires avec champs calculés
@@ -443,6 +461,8 @@ class AudienceSerializer(serializers.ModelSerializer):
 
 # Serializer pour les avocats
 class AvocatSerializer(serializers.ModelSerializer):
+    nom_complet = serializers.ReadOnlyField()
+
     class Meta:
         model = Avocat
         fields = '__all__'

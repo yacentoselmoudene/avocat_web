@@ -2,9 +2,114 @@ import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import Select from "react-select";
 import UnifiedEtapeButton from "../components/UnifiedEtapeButton";
+import ConfigModal from "../components/ConfigModal";
 
-// gestion de procedure et etapes d'une affairen
+//  react-select pour recherche avec input hidden pour compatibilité
+const ReactSelectWithHidden = ({ id, value, onChange, options, placeholder, style }) => {
+  const [internalOption, setInternalOption] = React.useState(null);
+  const isControlled = value !== undefined;
+  const selectedOption = isControlled
+    ? (value !== null ? options.find((o) => o.value === value) || null : null)
+    : internalOption;
+  const handleChange = (opt) => {
+    const val = opt?.value || "";
+    // garde  hidden input à jour
+    if (id) {
+      const hidden = document.getElementById(id);
+      if (hidden) {
+        hidden.value = val;
+      }
+    }
+    if (!isControlled) {
+      setInternalOption(opt || null);
+    }
+    if (onChange) onChange(val, opt || null);
+  };
+  return (
+    <>
+      <Select
+        value={selectedOption}
+        onChange={handleChange}
+        options={options}
+        isSearchable
+        isClearable
+        styles={{ control: (p) => ({ ...p, minHeight: 38 }), menu: (p) => ({ ...p, zIndex: 10 }) }}
+        placeholder={placeholder}
+        inputId={id}
+      />
+      {id ? (
+        <input type="hidden" id={id} value={selectedOption ? selectedOption.value : ""} readOnly />
+      ) : null}
+    </>
+  );
+};
+
+//villes par région
+const preferredCityTokens = [
+  // Grand Casablanca-Settat
+  "casablanca", "الدار البيضاء", "دار البيضاء", "casa", "البيضاء",
+  "mohammedia", "المحمدية",
+  "settat", "سطات",
+  // Rabat-Salé-Kénitra
+  "rabat", "الرباط",
+  "salé", "سلا",
+  "kénitra", "kenitra", "القنيطرة",
+  // Marrakech-Safi
+  "marrakech", "مراكش",
+  "safi", "آسفي", "اسفي",
+  // Tanger-Tétouan-Al Hoceïma
+  "tanger", "طنجة",
+  "tétouan", "tetouan", "تطوان",
+  "al hoceima", "الحسيمة",
+  // Fès-Meknès
+  "fès", "fes", "فاس",
+  "meknès", "meknes", "مكناس",
+  // Oriental
+  "oujda", "وجدة",
+  "nador", "الناظور",
+  // Beni Mellal-Khénifra
+  "beni mellal", "بني ملال",
+  "khénifra", "khenifra", "خنيفرة",
+  // Souss-Massa
+  "agadir", "أكادير",
+  "taroudant", "تارودانت",
+  // Drâa-Tafilalet
+  "errachidia", "الراشيدية",
+  "tinghir", "تنغير",
+  // Laayoune-Sakia El Hamra & Dakhla-Oued Ed-Dahab
+  "laayoune", "laâyoune", "العيون",
+  "dakhla", "الداخلة",
+].map((s) => String(s).toLowerCase());
+
+const isPreferredCity = (name) => {
+  const n = String(name || "").toLowerCase().trim();
+  if (!n) return false;
+  return preferredCityTokens.some((tok) => n.includes(tok));
+};
+
+const formatTribunalLabel = (t) => {
+  const name =
+    t?.nomtribunal_fr || t?.nomtribunal_ar || t?.nomtribunal || t?.nom || t?.name || t?.label || t?.libelle || "Tribunal";
+  const city =
+    t?.villetribunal_fr || t?.villetribunal_ar || t?.villetribunal || t?.ville || t?.city || t?.commune || t?.localite || "";
+  return city ? `${name} - ${city}` : String(name);
+};
+
+// Avocat  label selon langue
+const isArabicLang = (typeof navigator !== "undefined" && (navigator.language || "").startsWith("ar"));
+const getAvocatLabel = (avocat) => {
+  if (!avocat) return "";
+  if (isArabicLang) {
+    const ar = `${avocat.prenom_ar || ""} ${avocat.nomavocat_ar || ""}`.trim();
+    if (ar) return ar;
+  }
+  const fr = `${avocat.prenom_fr || ""} ${avocat.nomavocat_fr || ""}`.trim();
+  return fr || avocat.nom_complet || "";
+};
+
+// gestion de procedure et etapes d'une affaire
 
 const WorkflowPage = () => {
   const { t } = useTranslation();
@@ -47,6 +152,11 @@ const WorkflowPage = () => {
   const [filteredHuissiers, setFilteredHuissiers] = useState([]);
   const [filteredOpposants, setFilteredOpposants] = useState([]);
 
+  // avocats ,pour champ Avocat du demandeur
+  const [avocats, setAvocats] = useState([]);
+  const [selectedAvocatName, setSelectedAvocatName] = useState("");
+  const [showConfigAvocats, setShowConfigAvocats] = useState(false);
+
   // états pour la phase d'appel
   const [dateJugement, setDateJugement] = useState(
     new Date().toISOString().split("T")[0],
@@ -77,6 +187,7 @@ const WorkflowPage = () => {
   const [documentsDefense, setDocumentsDefense] = useState(null);
   const [observationsDefense, setObservationsDefense] = useState("");
   const [jugement, setJugement] = useState("");
+  
 
   // États pour les étapes pénales EXECUTION
   const [executionFaite, setExecutionFaite] = useState(false);
@@ -86,6 +197,18 @@ const WorkflowPage = () => {
   const [observationsExecution, setObservationsExecution] = useState("");
   const [motifNonExecution, setMotifNonExecution] = useState("");
   const [typeExecution, setTypeExecution] = useState("");
+
+  // Libellé affiché pour les avocats selon la langue (ar/fr)
+  const getAvocatLabel = (avocat) => {
+    if (!avocat) return "";
+    const isArabicLang = (t?.i18n?.language || "").startsWith("ar");
+    if (isArabicLang) {
+      const ar = `${avocat.prenom_ar || ""} ${avocat.nomavocat_ar || ""}`.trim();
+      if (ar) return ar;
+    }
+    const fr = `${avocat.prenom_fr || ""} ${avocat.nomavocat_fr || ""}`.trim();
+    return fr || avocat.nom_complet || "";
+  };
 
   // Constantes pour les choix pénaux
   const AUTORITES_EMETTRICES = [
@@ -142,7 +265,7 @@ const WorkflowPage = () => {
     { value: "AUTRE", label: "Autre", label_ar: "أخرى" },
   ];
 
-  // chargelent des donnees de l'affaire
+  // chargement des donnees de l'affaire
 
   useEffect(() => {
     // Récupérer les informations de l'utilisateur connecté
@@ -172,7 +295,7 @@ const WorkflowPage = () => {
         if (response.data.role_client_libelle) {
           const fonction = response.data.role_client_libelle;
 
-          // Détection plus robuste du rôle (insensible à la casse)
+          // Détection du rôle (insensible à la casse)
           const fonctionLower = (fonction || '').toLowerCase();
           const fonctionUpper = fonction.toUpperCase();
 
@@ -259,6 +382,15 @@ const WorkflowPage = () => {
     chargerHuissiers();
     chargerOpposants();
     chargerTribunaux();
+    // charger avocats
+    (async () => {
+      try {
+        const res = await api.get("avocats/");
+        setAvocats(Array.isArray(res.data) ? res.data : []);
+      } catch (e) {
+        console.error("Erreur chargement avocats:", e);
+      }
+    })();
   }, []);
 
   // FORCAGE du rôle opposant pour les affaires pénales
@@ -726,8 +858,27 @@ const WorkflowPage = () => {
   async function chargerTribunaux() {
     try {
       const response = await api.get("tribunals/");
-      const tribunauxData = response.data;
+      let tribunauxData = Array.isArray(response.data) ? response.data : [];
       console.log("Tribunaux chargés:", tribunauxData);
+      // normalisation des données des tribunaux pour gérer les variations de l'API : ville région apres nom
+      tribunauxData = tribunauxData.map((t) => ({
+        idtribunal: t.idtribunal ?? t.id ?? t.pk ?? t.uid,
+        nomtribunal: t.nomtribunal ?? t.nom ?? t.name ?? t.nomtribunal_fr ?? t.nomtribunal_ar,
+        villetribunal: t.villetribunal ?? t.ville ?? t.city ?? t.villetribunal_fr ?? t.villetribunal_ar,
+        nomtribunal_fr: t.nomtribunal_fr,
+        nomtribunal_ar: t.nomtribunal_ar,
+        villetribunal_fr: t.villetribunal_fr,
+        villetribunal_ar: t.villetribunal_ar,
+        type: t.type ?? t.categorie ?? t.category,
+        niveau: t.niveau ?? t.level,
+      }));
+      tribunauxData = tribunauxData
+        .sort((a, b) => {
+          const sa = isPreferredCity(a.villetribunal) ? 1 : 0;
+          const sb = isPreferredCity(b.villetribunal) ? 1 : 0;
+          if (sb - sa !== 0) return sb - sa;
+          return String(a.nomtribunal || "").localeCompare(String(b.nomtribunal || ""), undefined, { sensitivity: "base" });
+        });
       setTribunaux(tribunauxData);
 
       // Extraire les villes disponibles
@@ -737,7 +888,12 @@ const WorkflowPage = () => {
             .map((tribunal) => tribunal.villetribunal)
             .filter(Boolean),
         ),
-      ].sort();
+      ].sort((a, b) => {
+        const sa = isPreferredCity(a) ? 1 : 0;
+        const sb = isPreferredCity(b) ? 1 : 0;
+        if (sb - sa !== 0) return sb - sa;
+        return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
+      });
       console.log("Villes disponibles:", villes);
       setVillesDisponibles(villes);
     } catch (error) {
@@ -1271,11 +1427,11 @@ const WorkflowPage = () => {
           date_convocation_arrestation: dateConvocationArrestation,
           audition_police_faite: auditionPoliceFaite,
           observations_penales: observationsPenales,
-          // NOUVEAU : Données pour la phase PROCEDURE
+          //   Données pour la phase PROCEDURE
           documents_defense: documentsDefense,
           observations_defense: observationsDefense,
           jugement: jugement,
-          // NOUVEAU : Données pour la phase EXECUTION
+          //  Données pour la phase EXECUTION
           execution_faite: executionFaite,
           date_execution: dateExecution,
           details_execution: detailsExecution,
@@ -1589,7 +1745,7 @@ const WorkflowPage = () => {
       }}
     >
       <ModalHeader
-        title={`${t("Workflow")} - Affaire N° ${affaireData?.annee_dossier || ""}-${affaireData?.code_dossier || ""}-${affaireData?.numero_dossier || affaireId}`}
+        title={`${t("Workflow")} - ${t("Affaire")} N° ${affaireData?.annee_dossier || ""}-${affaireData?.code_dossier || ""}-${affaireData?.numero_dossier || affaireId}`}
         onClose={() => navigate("/affaires")}
       />
 
@@ -1624,6 +1780,9 @@ const WorkflowPage = () => {
               phase={phase}
               affaireId={affaireId}
               api={api}
+              avocats={avocats}
+              showConfigAvocats={showConfigAvocats}
+              setShowConfigAvocats={setShowConfigAvocats}
               etapesOptionnelles={etapesOptionnelles}
               toggleEtapeOptionnelle={toggleEtapeOptionnelle}
               typesAvertissement={typesAvertissement}
@@ -1693,14 +1852,14 @@ const WorkflowPage = () => {
               setAuditionPoliceFaite={setAuditionPoliceFaite}
               observationsPenales={observationsPenales}
               setObservationsPenales={setObservationsPenales}
-              // NOUVEAU : Props pour la phase PROCEDURE
+              // Props pour la phase PROCEDURE
               documentsDefense={documentsDefense}
               setDocumentsDefense={setDocumentsDefense}
               observationsDefense={observationsDefense}
               setObservationsDefense={setObservationsDefense}
               jugement={jugement}
               setJugement={setJugement}
-              // NOUVEAU : Props pour la phase EXECUTION
+              //  Props pour la phase EXECUTION
               executionFaite={executionFaite}
               setExecutionFaite={setExecutionFaite}
               dateExecution={dateExecution}
@@ -1726,23 +1885,26 @@ const WorkflowPage = () => {
 // COMPOSANTS AUXILIAIRES
 
 // CHARGEMENT
-const ModalLoading = ({ title, onClose }) => (
-  <div style={backdropStyle}>
-    <div style={smallContainerStyle}>
-      <ModalHeader title={title} onClose={onClose} />
-      <div style={{ textAlign: "center", padding: 40 }}>
-        <p>Chargement...</p>
+const ModalLoading = ({ title, onClose }) => {
+  const { t } = useTranslation();
+  return (
+    <div style={backdropStyle}>
+      <div style={smallContainerStyle}>
+        <ModalHeader title={title} onClose={onClose} />
+        <div style={{ textAlign: "center", padding: 40 }}>
+          <p>{t("Chargement...")}</p>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 // AFFAIRE PÉNALE
 const ModalNotificationPenale = ({ affaireId, onClose, t }) => (
   <div style={backdropStyle}>
     <div style={smallContainerStyle}>
       <ModalHeader
-        title={`Workflow - Affaire N° ${affaireId}`}
+        title={`${t("Workflow")} - ${t("Affaire")} N° ${affaireId}`}
         onClose={onClose}
       />
       <div style={{ padding: 20, color: "#b71c1c" }}>
@@ -1771,6 +1933,7 @@ const EtapePenaleOpposant = ({
   setObservationsPenales,
   affaireId,
 }) => {
+  const { t } = useTranslation();
   // Constantes pour les choix pénaux
   const AUTORITES_EMETTRICES = [
     {
@@ -1829,7 +1992,7 @@ const EtapePenaleOpposant = ({
             fontSize: "12px",
           }}
         >
-          Délai: {etape.delai_legal} jours
+          {t("Délai légal")}: {etape.delai_legal} {t("jours")}
         </span>
       </div>
 
@@ -1849,25 +2012,16 @@ const EtapePenaleOpposant = ({
               fontWeight: "bold",
             }}
           >
-            Autorité émettrice :
+            {t("Autorité émettrice :")}
           </label>
-          <select
-            value={autoriteEmettrice}
-            onChange={(e) => setAutoriteEmettrice(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-            }}
-          >
-            <option value="">Sélectionner une autorité</option>
-            {AUTORITES_EMETTRICES.map((autorite) => (
-              <option key={autorite.value} value={autorite.value}>
-                {autorite.label} - {autorite.label_ar}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={AUTORITES_EMETTRICES.map(a => ({ value: a.value, label: `${t(a.label)} - ${a.label_ar}` })).find(o => o.value === autoriteEmettrice) || null}
+            onChange={(opt) => setAutoriteEmettrice(opt?.value || "")}
+            options={AUTORITES_EMETTRICES.map(a => ({ value: a.value, label: `${t(a.label)} - ${a.label_ar}` }))}
+            isSearchable
+            isClearable
+            styles={{ control: (p) => ({ ...p, minHeight: 38 }) }}
+          />
         </div>
 
         {/* Type d'action pénale */}
@@ -1879,25 +2033,16 @@ const EtapePenaleOpposant = ({
               fontWeight: "bold",
             }}
           >
-            Type d'action :
+            {t("Type d'action :")}
           </label>
-          <select
-            value={typeActionPenale}
-            onChange={(e) => setTypeActionPenale(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-            }}
-          >
-            <option value="">Sélectionner un type</option>
-            {TYPES_ACTION_PENALE.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label} - {type.label_ar}
-              </option>
-            ))}
-          </select>
+          <Select
+            value={TYPES_ACTION_PENALE.map(a => ({ value: a.value, label: `${t(a.label)} - ${a.label_ar}` })).find(o => o.value === typeActionPenale) || null}
+            onChange={(opt) => setTypeActionPenale(opt?.value || "")}
+            options={TYPES_ACTION_PENALE.map(a => ({ value: a.value, label: `${t(a.label)} - ${a.label_ar}` }))}
+            isSearchable
+            isClearable
+            styles={{ control: (p) => ({ ...p, minHeight: 38 }) }}
+          />
         </div>
 
         {/* Date de convocation/arrestation */}
@@ -1909,7 +2054,7 @@ const EtapePenaleOpposant = ({
               fontWeight: "bold",
             }}
           >
-            Date de convocation/arrestation :
+            {t("Date de convocation/arrestation :")}
           </label>
           <input
             type="date"
@@ -1939,7 +2084,7 @@ const EtapePenaleOpposant = ({
               onChange={(e) => setAuditionPoliceFaite(e.target.checked)}
               style={{ marginRight: "8px" }}
             />
-            Audition par la police judiciaire effectuée
+            {t("Audition par la police judiciaire effectuée")}
           </label>
         </div>
 
@@ -1952,7 +2097,7 @@ const EtapePenaleOpposant = ({
               fontWeight: "bold",
             }}
           >
-            Document PDF (convocation/arrestation) :
+            {t("Document PDF (convocation/arrestation) :")}
           </label>
           <input
             type="file"
@@ -1966,7 +2111,7 @@ const EtapePenaleOpposant = ({
             }}
           />
           <small style={{ color: "#666", fontSize: "12px" }}>
-            Copie de la convocation ou PV d'arrestation
+            {t("Copie de la convocation ou PV d'arrestation")}
           </small>
         </div>
 
@@ -1979,12 +2124,12 @@ const EtapePenaleOpposant = ({
               fontWeight: "bold",
             }}
           >
-            Observations de l'avocat :
+            {t("Observations de l'avocat :")}
           </label>
           <textarea
             value={observationsPenales}
             onChange={(e) => setObservationsPenales(e.target.value)}
-            placeholder="Notes et observations..."
+            placeholder={t("Notes et observations...")}
             style={{
               width: "100%",
               padding: "8px",
@@ -2002,7 +2147,7 @@ const EtapePenaleOpposant = ({
             affaireId={affaireId}
             onComplete={(etapeId) => onCompleter(etapeId, observationsPenales)}
           >
-            Terminer l'étape
+            {t("Terminer l'étape")}
           </UnifiedEtapeButton>
         ) : (
           <div
@@ -2018,7 +2163,7 @@ const EtapePenaleOpposant = ({
               alignItems: "center",
             }}
           >
-            Terminée
+            {t("Terminée")}
           </div>
         )}
       </div>
@@ -2045,6 +2190,7 @@ const EtapePenaleExecutionDemandeur = ({
   setMotifNonExecution,
   affaireId,
 }) => {
+  const { t } = useTranslation();
   return (
     <div
       style={{
@@ -2105,7 +2251,7 @@ const EtapePenaleExecutionDemandeur = ({
               onChange={(e) => setExecutionFaite(e.target.checked)}
               style={{ marginRight: "8px" }}
             />
-            Décision exécutée ?
+            {t("Décision exécutée ?")}
           </label>
         </div>
 
@@ -2121,7 +2267,7 @@ const EtapePenaleExecutionDemandeur = ({
                   fontWeight: "bold",
                 }}
               >
-                Date d'exécution :
+                {t("Date d'exécution :")}
               </label>
               <input
                 type="date"
@@ -2145,12 +2291,12 @@ const EtapePenaleExecutionDemandeur = ({
                   fontWeight: "bold",
                 }}
               >
-                Détails de l'exécution :
+                {t("Détails de l'exécution")} :
               </label>
               <textarea
                 value={detailsExecution}
                 onChange={(e) => setDetailsExecution(e.target.value)}
-                placeholder="Paiement de l'amende, indemnisation, restitution d'un bien..."
+                placeholder={t("Paiement de l'amende, indemnisation, restitution d'un bien...")}
                 style={{
                   width: "100%",
                   padding: "8px",
@@ -2186,7 +2332,7 @@ const EtapePenaleExecutionDemandeur = ({
                 }}
               />
               <small style={{ color: "#666", fontSize: "12px" }}>
-                Preuve de paiement, PV d'exécution, certificat de remise...
+                {t("Preuve de paiement, PV d'exécution, certificat de remise...")}
               </small>
             </div>
 
@@ -2199,12 +2345,12 @@ const EtapePenaleExecutionDemandeur = ({
                   fontWeight: "bold",
                 }}
               >
-                Observations :
+                {t("Observations :")}
               </label>
               <textarea
                 value={observationsExecution}
                 onChange={(e) => setObservationsExecution(e.target.value)}
-                placeholder="Notes sur le déroulement de l'exécution..."
+                placeholder={t("Notes sur le déroulement de l'exécution...")}
                 style={{
                   width: "100%",
                   padding: "8px",
@@ -2231,7 +2377,7 @@ const EtapePenaleExecutionDemandeur = ({
             <textarea
               value={motifNonExecution}
               onChange={(e) => setMotifNonExecution(e.target.value)}
-              placeholder="Raison pour laquelle l'exécution n'a pas eu lieu..."
+              placeholder={t("Raison pour laquelle l'exécution n'a pas eu lieu...")}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -2281,6 +2427,7 @@ const EtapePenaleExecutionOpposant = ({
   setMotifNonExecution,
   affaireId,
 }) => {
+    const { t } = useTranslation();
   // Constantes pour les types d'exécution
   const TYPES_EXECUTION = [
     { value: "EMPRISONNEMENT", label: "Emprisonnement", label_ar: "سجن" },
@@ -2353,7 +2500,7 @@ const EtapePenaleExecutionOpposant = ({
               onChange={(e) => setExecutionFaite(e.target.checked)}
               style={{ marginRight: "8px" }}
             />
-            Jugement exécuté ?
+            {t("Jugement exécuté ?")}
           </label>
         </div>
 
@@ -2369,7 +2516,7 @@ const EtapePenaleExecutionOpposant = ({
                   fontWeight: "bold",
                 }}
               >
-                Date d'exécution :
+                {t("Date d'exécution :")}
               </label>
               <input
                 type="date"
@@ -2393,25 +2540,16 @@ const EtapePenaleExecutionOpposant = ({
                   fontWeight: "bold",
                 }}
               >
-                Type d'exécution :
+                {t("Type d'exécution")} :
               </label>
-              <select
-                value={typeExecution}
-                onChange={(e) => setTypeExecution(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "8px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                }}
-              >
-                <option value="">Sélectionner le type d'exécution</option>
-                {TYPES_EXECUTION.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label} - {type.label_ar}
-                  </option>
-                ))}
-              </select>
+              <Select
+                value={TYPES_EXECUTION.map(t => ({ value: t.value, label: `${t.label} - ${t.label_ar}` })).find(o => o.value === typeExecution) || null}
+                onChange={(opt) => setTypeExecution(opt?.value || "")}
+                options={TYPES_EXECUTION.map(t => ({ value: t.value, label: `${t.label} - ${t.label_ar}` }))}
+                isSearchable
+                isClearable
+                styles={{ control: (p) => ({ ...p, minHeight: 38 }) }}
+              />
             </div>
 
             {/* Document PDF */}
@@ -2438,8 +2576,7 @@ const EtapePenaleExecutionOpposant = ({
                 }}
               />
               <small style={{ color: "#666", fontSize: "12px" }}>
-                Preuve d'exécution, reçu de paiement, certificat de fin de
-                peine...
+                {t("Preuve d'exécution, reçu de paiement, certificat de fin de peine...")}
               </small>
             </div>
 
@@ -2452,12 +2589,12 @@ const EtapePenaleExecutionOpposant = ({
                   fontWeight: "bold",
                 }}
               >
-                Observations :
+                {t("Observations :")}
               </label>
               <textarea
                 value={observationsExecution}
                 onChange={(e) => setObservationsExecution(e.target.value)}
-                placeholder="Remise de peine, appel en cours, suspension..."
+                placeholder={t("Remise de peine, appel en cours, suspension...")}
                 style={{
                   width: "100%",
                   padding: "8px",
@@ -2484,7 +2621,7 @@ const EtapePenaleExecutionOpposant = ({
             <textarea
               value={motifNonExecution}
               onChange={(e) => setMotifNonExecution(e.target.value)}
-              placeholder="Raison pour laquelle l'exécution n'a pas eu lieu..."
+              placeholder={t("Raison pour laquelle l'exécution n'a pas eu lieu...")}
               style={{
                 width: "100%",
                 padding: "8px",
@@ -2546,6 +2683,7 @@ const EtapePenaleProcedure = ({
   setJugement,
   affaireId,
 }) => {
+   const { t } = useTranslation();
   // Constantes pour les jugements
   const TYPES_JUGEMENT = [
     { value: "PRISON", label: "Prison", label_ar: "سجن" },
@@ -2606,7 +2744,7 @@ const EtapePenaleProcedure = ({
               fontWeight: "bold",
             }}
           >
-            Documents de défense (PDF) :
+            {t("Documents de défense (PDF)")} :
           </label>
           <input
             type="file"
@@ -2621,7 +2759,7 @@ const EtapePenaleProcedure = ({
             }}
           />
           <small style={{ color: "#666", fontSize: "12px" }}>
-            Mémoires de défense, preuves, témoignages...
+            {t("Mémoires de défense, preuves, témoignages...")}
           </small>
         </div>
 
@@ -2634,12 +2772,12 @@ const EtapePenaleProcedure = ({
               fontWeight: "bold",
             }}
           >
-            Observations de l'avocat :
+            {t("Observations de l'avocat :")}
           </label>
           <textarea
             value={observationsDefense}
             onChange={(e) => setObservationsDefense(e.target.value)}
-            placeholder="Notes et observations sur l'audience et la défense..."
+            placeholder={t("Notes et observations sur l'audience et la défense...")}
             style={{
               width: "100%",
               padding: "8px",
@@ -2660,25 +2798,18 @@ const EtapePenaleProcedure = ({
               fontWeight: "bold",
             }}
           >
-            Jugement :
+            {t("Jugement")} :
           </label>
-          <select
+          <ReactSelectWithHidden
+            id={undefined}
             value={jugement}
-            onChange={(e) => setJugement(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "8px",
-              border: "1px solid #ddd",
-              borderRadius: "4px",
-            }}
-          >
-            <option value="">Sélectionner le jugement</option>
-            {TYPES_JUGEMENT.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label} - {type.label_ar}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setJugement(val)}
+            options={TYPES_JUGEMENT.map((type) => ({
+              value: type.value,
+              label: `${type.label} - ${type.label_ar}`,
+            }))}
+            placeholder={t("Sélectionner le jugement")}
+          />
         </div>
 
         {!etape.terminee ? (
@@ -2773,43 +2904,46 @@ const RoleDisplay = ({ roleClient, affaireData }) => {
   );
 };
 
-const ConfigurationRapide = ({ appliquerStrategie }) => (
-  <div style={configRapideStyle}>
-    <h6 style={{ marginBottom: 12, color: "#495057" }}>
-      ⚙️ Configuration rapide des étapes
-    </h6>
-    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-      <button
-        type="button"
-        onClick={() => appliquerStrategie("AVEC_AVERTISSEMENT")}
-        style={btnStyle("#007bff")}
-      >
-        Avec avertissement
-      </button>
-      <button
-        type="button"
-        onClick={() => appliquerStrategie("DEMANDE_DIRECTE")}
-        style={btnStyle("#28a745")}
-      >
-        Demande directe
-      </button>
-      <button
-        type="button"
-        onClick={() => appliquerStrategie("PLAINTE_DIRECTE")}
-        style={btnStyle("#dc3545")}
-      >
-        Plainte directe
-      </button>
-      <button
-        type="button"
-        onClick={() => appliquerStrategie("AUTOMATIQUE")}
-        style={btnStyle("#6c757d")}
-      >
-        Automatique
-      </button>
+const ConfigurationRapide = ({ appliquerStrategie }) => {
+  const { t } = useTranslation();
+  return (
+    <div style={configRapideStyle}>
+      <h6 style={{ marginBottom: 12, color: "#495057" }}>
+        ⚙️ {t("Configuration rapide des étapes")}
+      </h6>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => appliquerStrategie("AVEC_AVERTISSEMENT")}
+          style={btnStyle("#007bff")}
+        >
+          {t("Avec avertissement")}
+        </button>
+        <button
+          type="button"
+          onClick={() => appliquerStrategie("DEMANDE_DIRECTE")}
+          style={btnStyle("#28a745")}
+        >
+          {t("Demande directe")}
+        </button>
+        <button
+          type="button"
+          onClick={() => appliquerStrategie("PLAINTE_DIRECTE")}
+          style={btnStyle("#dc3545")}
+        >
+          {t("Plainte directe")}
+        </button>
+        <button
+          type="button"
+          onClick={() => appliquerStrategie("AUTOMATIQUE")}
+          style={btnStyle("#6c757d")}
+        >
+          {t("Automatique")}
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const btnStyle = (color) => ({
   padding: "6px 12px",
@@ -2842,6 +2976,9 @@ const EtapeItem = ({
   phase,
   affaireId,
   api,
+  avocats,
+  showConfigAvocats,
+  setShowConfigAvocats,
   etapesOptionnelles,
   toggleEtapeOptionnelle,
   typesAvertissement,
@@ -2932,6 +3069,9 @@ const EtapeItem = ({
   typeExecution,
   setTypeExecution,
 }) => {
+  const { t } = useTranslation();
+  //  observations
+  const [observations, setObservations] = useState(etape.observations || "");
   //  Affichage conditionnel des étapes pénales opposant
   if (etape.type_etape === "PENALE_OPPOSANT_INITIALE") {
     return (
@@ -3060,8 +3200,7 @@ const EtapeItem = ({
   const estAppliquee =
     !isOptionnelle || etapesOptionnelles.includes(index) || estAutoAffichage;
 
-  //  observations
-  const [observations, setObservations] = useState(etape.observations || "");
+  
 
   // Fonction pour déclencher la complétion de l'étape
   async function onTerminerEtape() {
@@ -3656,7 +3795,7 @@ const EtapeItem = ({
           // Fonction pour créer ou récupérer le type d'intervention
           const getOrCreateTypeIntervention = async (libelleType) => {
             try {
-              // D'abord essayer de récupérer le type existant
+              //  récupérer le type existant
               const typesResponse = await api.get("typeinterventions/");
               const existingType = typesResponse.data.find(
                 (t) =>
@@ -3897,12 +4036,12 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={labelStyle}>Type d'avertissement:</label>
-                    <select
+                    <label style={labelStyle}>{t("Type d'avertissement:")}</label>
+                    <ReactSelectWithHidden
                       id={`type-avertissement-etape_${index}`}
                       style={selectStyle}
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
+                      value={undefined}
+                      onChange={(selectedId) => {
                         const type = typesAvertissement.find(
                           (t) =>
                             String(t.idTypeAvertissement) ===
@@ -3914,7 +4053,6 @@ const EtapeItem = ({
                         if (type && delaiInput) {
                           delaiInput.value = type.delai_legal ?? "";
                         }
-                        // recalcul date limite si date réception remplie
                         const dateReceptionInput = document.getElementById(
                           `date-reception-etape_${index}`,
                         );
@@ -3938,22 +4076,15 @@ const EtapeItem = ({
                           }
                         }
                       }}
-                    >
-                      <option value="">
-                        Sélectionner un type d'avertissement
-                      </option>
-                      {typesAvertissement.map((type) => (
-                        <option
-                          key={type.idTypeAvertissement}
-                          value={type.idTypeAvertissement}
-                        >
-                          {type.libelle} - {type.libelle_ar}
-                        </option>
-                      ))}
-                    </select>
+                      options={typesAvertissement.map((type) => ({
+                        value: String(type.idTypeAvertissement),
+                        label: `${type.libelle} - ${type.libelle_ar}`,
+                      }))}
+                      placeholder={t("Sélectionner un type d'avertissement")}
+                    />
                   </div>
                   <div style={{ minWidth: 120 }}>
-                    <label style={labelStyle}>Délai légal (jours):</label>
+                    <label style={labelStyle}>{t("Délai légal (jours):")}</label>
                     <input
                       type="number"
                       id={`delai-legal-etape_${index}`}
@@ -3997,16 +4128,60 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 240 }}>
-                    <label style={labelStyle}>Avocat du demandeur:</label>
-                    <input
-                      type="text"
-                      id={`avocat-demandeur-etape_${index}`}
-                      placeholder="Saisir le nom de l'avocat"
-                      style={inputStyle}
-                    />
+                    <label style={labelStyle}>{t("Avocat du demandeur:")}</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <ReactSelectWithHidden
+                          id={`avocat-demandeur-etape_${index}`}
+                          value={undefined}
+                          onChange={() => {}}
+                          options={[
+                            { value: "", label: "" },
+                            ...avocats.map((a) => ({
+                              value: getAvocatLabel(a),
+                              label: getAvocatLabel(a),
+                            })),
+                          ]}
+                          placeholder={t("Saisir le nom de l'avocat")}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowConfigAvocats(true)}
+                        style={{
+                          padding: "8px 12px",
+                          border: "1px solid #e0e0e0",
+                          background: "#fff",
+                          borderRadius: 4,
+                          cursor: "pointer",
+                          whiteSpace: "nowrap",
+                          height: 38,
+                        }}
+                        title={t("Ajouter un avocat")}
+                      >
+                        {t("Ajouter")}
+                      </button>
+                    </div>
                   </div>
+                  {showConfigAvocats && (
+                    <ConfigModal
+                      onClose={() => {
+                        setShowConfigAvocats(false);
+                        (async () => {
+                          try {
+                            const res = await api.get("avocats/");
+                            setAvocats(Array.isArray(res.data) ? res.data : []);
+                          } catch (e) {
+                            console.error("Erreur rafraîchissement avocats:", e);
+                          }
+                        })();
+                      }}
+                      initialTableKey="avocats"
+                      openAvocatForm
+                    />
+                  )}
                   <div style={{ minWidth: 180 }}>
-                    <label style={labelStyle}>Date de réception:</label>
+                    <label style={labelStyle}>{t("Date de réception:")}</label>
                     <input
                       type="date"
                       id={`date-reception-etape_${index}`}
@@ -4033,7 +4208,7 @@ const EtapeItem = ({
                     />
                   </div>
                   <div style={{ minWidth: 180 }}>
-                    <label style={labelStyle}>Date limite:</label>
+                    <label style={labelStyle}>{t("Date limite:")}</label>
                     <input
                       type="date"
                       id={`date-limite-etape_${index}`}
@@ -4062,24 +4237,21 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={labelStyle}>Type de demande:</label>
-                    <select
+                    <label style={labelStyle}>{t("Type de demande:")}</label>
+                    <ReactSelectWithHidden
                       id={`type-demande-etape_${index}`}
                       style={selectStyle}
-                    >
-                      <option value="">Sélectionner un type de demande</option>
-                      {typesDemande.map((type) => (
-                        <option
-                          key={type.idTypeDemande}
-                          value={type.idTypeDemande}
-                        >
-                          {type.libelle} - {type.libelle_ar}
-                        </option>
-                      ))}
-                    </select>
+                      value={undefined}
+                      onChange={() => { /* handled by legacy DOM reads */ }}
+                      options={typesDemande.map((type) => ({
+                        value: String(type.idTypeDemande),
+                        label: `${type.libelle} - ${type.libelle_ar}`,
+                      }))}
+                      placeholder={t("Sélectionner un type de demande")}
+                    />
                   </div>
                   <div style={{ minWidth: 120 }}>
-                    <label style={labelStyle}>Délai légal (jours):</label>
+                    <label style={labelStyle}>{t("Délai légal (jours):")}</label>
                     <input
                       type="number"
                       id={`delai-legal-etape_${index}`}
@@ -4126,54 +4298,45 @@ const EtapeItem = ({
                   {/* Sélection de ville */}
                   {villesDisponibles.length > 0 && (
                     <div style={{ flex: 1, minWidth: 200 }}>
-                      <label style={labelStyle}>Ville:</label>
-                      <select
-                        style={selectStyle}
+                      <label style={labelStyle}>{t("Ville:")}</label>
+                      <ReactSelectWithHidden
+                        id={undefined}
                         value={villeSelectionnee}
-                        onChange={(e) => setVilleSelectionnee(e.target.value)}
-                      >
-                        <option value="">
-                          Toutes les villes ({villesDisponibles.length})
-                        </option>
-                        {villesDisponibles.map((ville) => (
-                          <option key={ville} value={ville}>
-                            {ville}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(val) => setVilleSelectionnee(val)}
+                        options={[
+                          { value: "", label: `${t("Toutes les villes")} (${villesDisponibles.length})` },
+                          ...villesDisponibles.map((ville) => ({ value: ville, label: ville })),
+                        ]}
+                        placeholder={t("Sélectionner une ville")}
+                      />
                     </div>
                   )}
 
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={labelStyle}>Tribunal:</label>
-                    <select
+                    <label style={labelStyle}>{t("Tribunal:")}</label>
+                    <ReactSelectWithHidden
                       id={`tribunal-audience-etape_${index}`}
-                      style={selectStyle}
                       value={tribunalSelectionne || ""}
-                      onChange={(e) =>
-                        setTribunalSelectionne(e.target.value || null)
-                      }
-                    >
-                      <option value="">Sélectionner un tribunal</option>
-                      {tribunaux
-                        .filter(
-                          (tribunal) =>
-                            !villeSelectionnee ||
-                            tribunal.villetribunal === villeSelectionnee,
-                        )
-                        .map((tribunal) => (
-                          <option
-                            key={tribunal.idtribunal}
-                            value={tribunal.idtribunal}
-                          >
-                            {tribunal.nomtribunal} - {tribunal.villetribunal}
-                          </option>
-                        ))}
-                    </select>
+                      onChange={(val) => setTribunalSelectionne(val || null)}
+                      options={[
+                        { value: "", label: t("Sélectionner un tribunal") },
+                        ...tribunaux
+                          .filter(
+                            (tribunal) =>
+                              !villeSelectionnee ||
+                              tribunal.villetribunal === villeSelectionnee,
+                          )
+                          .map((tribunal) => ({
+                            value: tribunal.idtribunal,
+                            label: formatTribunalLabel(tribunal),
+                          })),
+                      ]}
+                      placeholder={t("Sélectionner un tribunal")}
+                    />
                   </div>
 
                   <div style={{ minWidth: 180 }}>
-                    <label style={labelStyle}>Date d'audience:</label>
+                    <label style={labelStyle}>{t("Date d'audience:")}</label>
                     <input
                       type="date"
                       id={`date-audience-etape_${index}`}
@@ -4184,7 +4347,7 @@ const EtapeItem = ({
                   </div>
 
                   <div style={{ minWidth: 150 }}>
-                    <label style={labelStyle}>Heure d'audience:</label>
+                    <label style={labelStyle}>{t("Heure d'audience:")}</label>
                     <input
                       type="time"
                       id={`heure-audience-etape_${index}`}
@@ -4221,10 +4384,10 @@ const EtapeItem = ({
                 </h6>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Résumé des faits:</label>
+                  <label style={labelStyle}>{t("Résumé des faits:")}</label>
                   <textarea
                     id={`resume-faits-etape_${index}`}
-                    placeholder="Décrivez les faits qui ont motivé la plainte..."
+                    placeholder={t("Décrivez les faits qui ont motivé la plainte...")}
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -4247,7 +4410,7 @@ const EtapeItem = ({
                       color: "#c62828",
                     }}
                   >
-                    Gestion des témoins
+                    {t("Gestion des témoins")}
                   </h6>
 
                   <div style={{ marginBottom: 12 }}>
@@ -4262,7 +4425,7 @@ const EtapeItem = ({
                         }
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Aucun témoin</span>
+                      <span style={{ fontSize: 14 }}>{t("Aucun témoin")}</span>
                     </label>
 
                     <label style={radioLabelStyle}>
@@ -4275,7 +4438,7 @@ const EtapeItem = ({
                         }
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Témoins présents</span>
+                      <span style={{ fontSize: 14 }}>{t("Témoins présents")}</span>
                     </label>
                   </div>
 
@@ -4290,7 +4453,7 @@ const EtapeItem = ({
                         color: "#c62828",
                       }}
                     >
-                      Ajouter des témoins
+                      {t("Ajouter des témoins")}
                     </h6>
 
                     <div
@@ -4315,42 +4478,35 @@ const EtapeItem = ({
                           color: "#c62828",
                         }}
                       >
-                        Nouveau témoin
+                        {t("Nouveau témoin")}
                       </h6>
                       <div
                         style={{ display: "flex", gap: 12, flexWrap: "wrap" }}
                       >
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Nom complet:</label>
+                          <label style={labelStyle}>{t("Nom complet:")}</label>
                           <input
                             type="text"
                             id={`nom-temoin-${index}`}
-                            placeholder="Nom et prénom"
+                            placeholder={t("Nom et prénom")}
                             style={inputStyle}
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Rôle:</label>
-                          <select
+                          <label style={labelStyle}>{t("Rôle:")}</label>
+                          <ReactSelectWithHidden
                             id={`role-temoin-${index}`}
-                            style={selectStyle}
-                          >
-                            <option value="">Sélectionner le rôle</option>
-                            <option value="témoin_principal">
-                              Témoin principal
-                            </option>
-                            <option value="témoin_secondaire">
-                              Témoin secondaire
-                            </option>
-                            <option value="expert">Expert</option>
-                            <option value="témoin_technique">
-                              Témoin technique
-                            </option>
-                            <option value="témoin_moral">Témoin moral</option>
-                            <option value="témoin_audition">
-                              Témoin d'audition
-                            </option>
-                          </select>
+                            options={[
+                              { value: "", label: t("Sélectionner le rôle") },
+                              { value: "témoin_principal", label: t("Témoin principal") },
+                              { value: "témoin_secondaire", label: t("Témoin secondaire") },
+                              { value: "expert", label: t("Expert") },
+                              { value: "témoin_technique", label: t("Témoin technique") },
+                              { value: "témoin_moral", label: t("Témoin moral") },
+                              { value: "témoin_audition", label: t("Témoin d'audition") },
+                            ]}
+                            placeholder={t("Sélectionner le rôle")}
+                          />
                         </div>
                       </div>
                       <div
@@ -4362,20 +4518,20 @@ const EtapeItem = ({
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Adresse:</label>
+                          <label style={labelStyle}>{t("Adresse:")}</label>
                           <textarea
                             id={`adresse-temoin-${index}`}
-                            placeholder="Adresse complète"
+                            placeholder={t("Adresse complète")}
                             rows={2}
                             style={textareaStyle}
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Téléphone:</label>
+                          <label style={labelStyle}>{t("Téléphone:")}</label>
                           <input
                             type="tel"
                             id={`telephone-temoin-${index}`}
-                            placeholder="Numéro de téléphone"
+                            placeholder={t("Numéro de téléphone")}
                             style={inputStyle}
                           />
                         </div>
@@ -4394,7 +4550,7 @@ const EtapeItem = ({
                             fontSize: 14,
                           }}
                         >
-                          + Ajouter le témoin
+                          {t("+ Ajouter le témoin")}
                         </button>
                       </div>
                     </div>
@@ -4402,7 +4558,7 @@ const EtapeItem = ({
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Plainte officielle (PDF):</label>
+                  <label style={labelStyle}>{t("Plainte officielle (PDF):")}</label>
                   <input
                     type="file"
                     id={`plainte-pdf-etape_${index}`}
@@ -4416,12 +4572,12 @@ const EtapeItem = ({
                     }}
                   />
                   <small style={{ color: "#666", fontSize: 12 }}>
-                    * Document obligatoire
+                    {t("* Document obligatoire")}
                   </small>
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Documents supplémentaires:</label>
+                  <label style={labelStyle}>{t("Documents supplémentaires:")}</label>
                   <input
                     type="file"
                     id={`docs-supplementaires-etape_${index}`}
@@ -4436,7 +4592,7 @@ const EtapeItem = ({
                     }}
                   />
                   <small style={{ color: "#666", fontSize: 12 }}>
-                    Photos, vidéos, témoignages, etc.
+                    {t("Photos, vidéos, témoignages, etc.")}
                   </small>
                 </div>
 
@@ -4448,10 +4604,10 @@ const EtapeItem = ({
                     borderTop: "1px solid #e0e0e0",
                   }}
                 >
-                  <label style={labelStyle}>Observations:</label>
+                  <label style={labelStyle}>{t("Observations:")}</label>
                   <textarea
                     id={`observations-etape_${index}`}
-                    placeholder="Notes internes pour l'avocat..."
+                    placeholder={t("Notes internes pour l'avocat...")}
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     style={{
@@ -4483,7 +4639,7 @@ const EtapeItem = ({
                       fontWeight: "bold",
                     }}
                   >
-                    Terminer l'étape
+                    {t("Terminer l'étape")}
                   </button>
                 </div>
               </div>
@@ -4509,7 +4665,7 @@ const EtapeItem = ({
                     fontWeight: "bold",
                   }}
                 >
-                  Réponse à la requête
+                  {t("Réponse à la requête")}
                 </h6>
 
                 <div
@@ -4521,10 +4677,10 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 300 }}>
-                    <label style={labelStyle}>Résumé de la réponse:</label>
+                    <label style={labelStyle}>{t("Résumé de la réponse:")}</label>
                     <textarea
                       id={`resume-reponse-etape_${index}`}
-                      placeholder="Résumé bref de la réponse..."
+                      placeholder={t("Résumé bref de la réponse...")}
                       style={{
                         width: "100%",
                         padding: "12px",
@@ -4561,7 +4717,7 @@ const EtapeItem = ({
                     fontWeight: "bold",
                   }}
                 >
-                  Soumission d'une représentation
+                  {t("Soumission d'une représentation")}
                 </h6>
 
                 <div
@@ -4573,10 +4729,10 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 300 }}>
-                    <label style={labelStyle}>Résumé du contenu:</label>
+                    <label style={labelStyle}>{t("Résumé du contenu:")}</label>
                     <textarea
                       id={`resume-contenu-etape_${index}`}
-                      placeholder="Résumé bref du contenu de la représentation..."
+                      placeholder={t("Résumé bref du contenu de la représentation...")}
                       style={{
                         width: "100%",
                         padding: "12px",
@@ -4591,7 +4747,7 @@ const EtapeItem = ({
                   </div>
 
                   <div style={{ minWidth: 180 }}>
-                    <label style={labelStyle}>Date de soumission:</label>
+                    <label style={labelStyle}>{t("Date de soumission:")}</label>
                     <input
                       type="date"
                       id={`date-soumission-etape_${index}`}
@@ -4635,11 +4791,11 @@ const EtapeItem = ({
                 >
                   <div style={{ flex: 1, minWidth: 300 }}>
                     <label style={labelStyle}>
-                      Contenu de la plainte (résumé):
+                      {t("Contenu de la plainte (résumé):")}
                     </label>
                     <textarea
                       id={`contenu-plainte-etape_${index}`}
-                      placeholder="Résumé du contenu de la plainte reçue..."
+                      placeholder={t("Résumé du contenu de la plainte reçue...")}
                       style={{
                         width: "100%",
                         padding: "12px",
@@ -4654,7 +4810,7 @@ const EtapeItem = ({
                   </div>
 
                   <div style={{ minWidth: 180 }}>
-                    <label style={labelStyle}>Délai de réponse:</label>
+                    <label style={labelStyle}>{t("Délai de réponse:")}</label>
                     <input
                       type="date"
                       id={`delai-reponse-etape_${index}`}
@@ -4707,10 +4863,10 @@ const EtapeItem = ({
                     borderTop: "1px solid #e0e0e0",
                   }}
                 >
-                  <label style={labelStyle}>Observations:</label>
+                  <label style={labelStyle}>{t("Observations:")}</label>
                   <textarea
                     id={`observations-etape_${index}`}
-                    placeholder="Notes sur l'enquête préliminaire..."
+                    placeholder={t("Notes sur l'enquête préliminaire...")}
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     style={{
@@ -4742,7 +4898,7 @@ const EtapeItem = ({
                       fontWeight: "bold",
                     }}
                   >
-                    Terminer l'étape
+                    {t("Terminer l'étape")}
                   </button>
                 </div>
               </div>
@@ -4822,21 +4978,16 @@ const EtapeItem = ({
                   id={`tribunal-section-${index}`}
                   style={{ display: "none", marginBottom: 16 }}
                 >
-                  <label style={labelStyle}>Tribunal compétent:</label>
-                  <select
+                  <label style={labelStyle}>{t("Tribunal compétent:")}</label>
+                  <ReactSelectWithHidden
                     id={`tribunal-competent-${index}`}
-                    style={selectStyle}
-                  >
-                    <option value="">Sélectionner un tribunal</option>
-                    {tribunaux.map((tribunal) => (
-                      <option
-                        key={tribunal.idtribunal}
-                        value={tribunal.idtribunal}
-                      >
-                        {tribunal.nomtribunal} - {tribunal.villetribunal}
-                      </option>
-                    ))}
-                  </select>
+                    options={[{ value: "", label: "Sélectionner un tribunal" },
+                      ...tribunaux.map((tribunal) => ({
+                        value: tribunal.idtribunal,
+                        label: formatTribunalLabel(tribunal),
+                      }))]}
+                    placeholder={t("Sélectionner un tribunal")}
+                  />
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
@@ -4854,7 +5005,7 @@ const EtapeItem = ({
                     }}
                   />
                   <small style={{ color: "#666", fontSize: 12 }}>
-                    * Document obligatoire
+                    * {t("Document obligatoire")}
                   </small>
                 </div>
 
@@ -4866,10 +5017,10 @@ const EtapeItem = ({
                     borderTop: "1px solid #e0e0e0",
                   }}
                 >
-                  <label style={labelStyle}>Observations:</label>
+                  <label style={labelStyle}>{t("Observations:")}</label>
                   <textarea
                     id={`observations-etape_${index}`}
-                    placeholder="Notes sur la décision du parquet..."
+                    placeholder={t("Notes sur la décision du parquet...")}
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     style={{
@@ -4901,7 +5052,7 @@ const EtapeItem = ({
                       fontWeight: "bold",
                     }}
                   >
-                    Terminer l'étape
+                    {t("Terminer l'étape")}
                   </button>
                 </div>
               </div>
@@ -4927,7 +5078,7 @@ const EtapeItem = ({
                     fontWeight: "bold",
                   }}
                 >
-                  🏛️ Audience pénale
+                  🏛️ {t("Audience pénale")}
                 </h6>
 
                 <div
@@ -4939,7 +5090,7 @@ const EtapeItem = ({
                   }}
                 >
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={labelStyle}>Date d'audience:</label>
+                    <label style={labelStyle}>{t("Date d'audience:")}</label>
                     <input
                       type="date"
                       id={`date-audience-penale-${index}`}
@@ -4948,7 +5099,7 @@ const EtapeItem = ({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 200 }}>
-                    <label style={labelStyle}>Heure d'audience:</label>
+                    <label style={labelStyle}>{t("Heure d'audience:")}</label>
                     <input
                       type="time"
                       id={`heure-audience-penale-${index}`}
@@ -4958,25 +5109,20 @@ const EtapeItem = ({
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Tribunal:</label>
-                  <select
+                  <label style={labelStyle}>{t("Tribunal:")}</label>
+                  <ReactSelectWithHidden
                     id={`tribunal-audience-penale-${index}`}
-                    style={selectStyle}
-                  >
-                    <option value="">Sélectionner un tribunal</option>
-                    {tribunaux.map((tribunal) => (
-                      <option
-                        key={tribunal.idtribunal}
-                        value={tribunal.idtribunal}
-                      >
-                        {tribunal.nomtribunal} - {tribunal.villetribunal}
-                      </option>
-                    ))}
-                  </select>
+                    options={[{ value: "", label: "Sélectionner un tribunal" },
+                      ...tribunaux.map((tribunal) => ({
+                        value: tribunal.idtribunal,
+                        label: formatTribunalLabel(tribunal),
+                      }))]}
+                    placeholder={t("Sélectionner un tribunal")}
+                  />
                 </div>
 
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Présence des parties:</label>
+                  <label style={labelStyle}>{t("Présence des parties:")}</label>
                   <div style={{ marginTop: 8 }}>
                     <label style={radioLabelStyle}>
                       <input
@@ -4984,7 +5130,7 @@ const EtapeItem = ({
                         id={`plaignant-present-${index}`}
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Plaignant présent</span>
+                      <span style={{ fontSize: 14 }}>{t("Plaignant présent")}</span>
                     </label>
 
                     <label style={radioLabelStyle}>
@@ -4993,7 +5139,7 @@ const EtapeItem = ({
                         id={`accuse-present-${index}`}
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Accusé présent</span>
+                      <span style={{ fontSize: 14 }}>{t("Accusé présent")}</span>
                     </label>
 
                     <label style={radioLabelStyle}>
@@ -5003,7 +5149,7 @@ const EtapeItem = ({
                         style={{ margin: 0 }}
                       />
                       <span style={{ fontSize: 14 }}>
-                        Avocat du plaignant présent
+                        {t("Avocat du plaignant présent")}
                       </span>
                     </label>
 
@@ -5014,7 +5160,7 @@ const EtapeItem = ({
                         style={{ margin: 0 }}
                       />
                       <span style={{ fontSize: 14 }}>
-                        Ministère public présent
+                        {t("Ministère public présent")}
                       </span>
                     </label>
                   </div>
@@ -5029,7 +5175,7 @@ const EtapeItem = ({
                       color: "#6a1b9a",
                     }}
                   >
-                    Gestion des témoins
+                    {t("Gestion des témoins")}
                   </h6>
 
                   <div style={{ marginBottom: 12 }}>
@@ -5044,7 +5190,7 @@ const EtapeItem = ({
                         }
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Aucun témoin</span>
+                      <span style={{ fontSize: 14 }}>{t("Aucun témoin")}</span>
                     </label>
 
                     <label style={radioLabelStyle}>
@@ -5057,7 +5203,7 @@ const EtapeItem = ({
                         }
                         style={{ margin: 0 }}
                       />
-                      <span style={{ fontSize: 14 }}>Témoins présents</span>
+                      <span style={{ fontSize: 14 }}>{t("Témoins présents")}</span>
                     </label>
                   </div>
 
@@ -5072,7 +5218,7 @@ const EtapeItem = ({
                         color: "#6a1b9a",
                       }}
                     >
-                      Ajouter des témoins
+                      {t("Ajouter des témoins")}
                     </h6>
 
                     <div
@@ -5097,42 +5243,35 @@ const EtapeItem = ({
                           color: "#6a1b9a",
                         }}
                       >
-                        Nouveau témoin
+                        {t("Nouveau témoin")}
                       </h6>
                       <div
                         style={{ display: "flex", gap: 12, flexWrap: "wrap" }}
                       >
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Nom complet:</label>
+                          <label style={labelStyle}>{t("Nom complet:")}</label>
                           <input
                             type="text"
                             id={`nom-temoin-${index}`}
-                            placeholder="Nom et prénom"
+                            placeholder={t("Nom et prénom")}
                             style={inputStyle}
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Rôle:</label>
-                          <select
+                          <label style={labelStyle}>{t("Rôle:")}</label>
+                          <ReactSelectWithHidden
                             id={`role-temoin-${index}`}
-                            style={selectStyle}
-                          >
-                            <option value="">Sélectionner le rôle</option>
-                            <option value="témoin_principal">
-                              Témoin principal
-                            </option>
-                            <option value="témoin_secondaire">
-                              Témoin secondaire
-                            </option>
-                            <option value="expert">Expert</option>
-                            <option value="témoin_technique">
-                              Témoin technique
-                            </option>
-                            <option value="témoin_moral">Témoin moral</option>
-                            <option value="témoin_audition">
-                              Témoin d'audition
-                            </option>
-                          </select>
+                            options={[
+                              { value: "", label: t("Sélectionner le rôle") },
+                              { value: "témoin_principal", label: t("Témoin principal") },
+                              { value: "témoin_secondaire", label: t("Témoin secondaire") },
+                              { value: "expert", label: t("Expert") },
+                              { value: "témoin_technique", label: t("Témoin technique") },
+                              { value: "témoin_moral", label: t("Témoin moral") },
+                              { value: "témoin_audition", label: t("Témoin d'audition") },
+                            ]}
+                            placeholder={t("Sélectionner le rôle")}
+                          />
                         </div>
                       </div>
                       <div
@@ -5144,20 +5283,20 @@ const EtapeItem = ({
                         }}
                       >
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Adresse:</label>
+                          <label style={labelStyle}>{t("Adresse:")}</label>
                           <textarea
                             id={`adresse-temoin-${index}`}
-                            placeholder="Adresse complète"
+                            placeholder={t("Adresse complète")}
                             rows={2}
                             style={textareaStyle}
                           />
                         </div>
                         <div style={{ flex: 1, minWidth: 200 }}>
-                          <label style={labelStyle}>Téléphone:</label>
+                          <label style={labelStyle}>{t("Téléphone:")}</label>
                           <input
                             type="tel"
                             id={`telephone-temoin-${index}`}
-                            placeholder="Numéro de téléphone"
+                            placeholder={t("Numéro de téléphone")}
                             style={inputStyle}
                           />
                         </div>
@@ -5176,7 +5315,7 @@ const EtapeItem = ({
                             fontSize: 14,
                           }}
                         >
-                          + Ajouter le témoin
+                          {t("+ Ajouter le témoin")}
                         </button>
                       </div>
                     </div>
@@ -5185,7 +5324,7 @@ const EtapeItem = ({
 
                 <div style={{ marginBottom: 16 }}>
                   <label style={labelStyle}>
-                    Compte-rendu d'audience (PDF):
+                    {t("Compte-rendu d'audience (PDF):")}
                   </label>
                   <input
                     type="file"
@@ -5200,7 +5339,7 @@ const EtapeItem = ({
                     }}
                   />
                   <small style={{ color: "#666", fontSize: 12 }}>
-                    * Document obligatoire
+                    * {t("Document obligatoire")}
                   </small>
                 </div>
 
@@ -5212,10 +5351,10 @@ const EtapeItem = ({
                     borderTop: "1px solid #e0e0e0",
                   }}
                 >
-                  <label style={labelStyle}>Observations:</label>
+                  <label style={labelStyle}>{t("Observations:")}</label>
                   <textarea
                     id={`observations-etape_${index}`}
-                    placeholder="Notes sur l'audience pénale..."
+                    placeholder={t("Notes sur l'audience pénale...")}
                     value={observations}
                     onChange={(e) => setObservations(e.target.value)}
                     style={{
@@ -5247,7 +5386,7 @@ const EtapeItem = ({
                       fontWeight: "bold",
                     }}
                   >
-                    Terminer l'étape
+                    {t("Terminer l'étape")}
                   </button>
                 </div>
               </div>
@@ -5273,7 +5412,7 @@ const EtapeItem = ({
                     fontWeight: "bold",
                   }}
                 >
-                  📋 Dépôt d'appel
+                  📋 {t("Dépôt d'appel")}
                 </h6>
                 <div
                   style={{
@@ -5285,7 +5424,7 @@ const EtapeItem = ({
                 >
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <label style={labelStyle}>
-                      Date du jugement de première instance:
+                      {t("Date du jugement de première instance:")}
                     </label>
                     <input
                       type="date"
@@ -5316,7 +5455,7 @@ const EtapeItem = ({
                   </div>
                   <div style={{ flex: 1, minWidth: 200 }}>
                     <label style={labelStyle}>
-                      Date limite d'appel (10 jours):
+                      {t("Date limite d'appel (10 jours):")}
                     </label>
                     <input
                       type="date"
@@ -5332,9 +5471,9 @@ const EtapeItem = ({
                   </div>
                 </div>
                 <div style={{ marginBottom: 16 }}>
-                  <label style={labelStyle}>Motifs de l'appel:</label>
+                  <label style={labelStyle}>{t("Motifs de l'appel:")}</label>
                   <textarea
-                    placeholder="Décrivez les motifs de l'appel..."
+                    placeholder={t("Décrivez les motifs de l'appel...")}
                     style={{
                       width: "100%",
                       padding: "12px",
@@ -5384,7 +5523,7 @@ const EtapeItem = ({
                     }}
                     type="button"
                   >
-                    Créer affaire d'appel
+                    {t("Créer affaire d'appel")}
                   </button>
                 )}
 
@@ -5905,24 +6044,20 @@ const NotificationParamsSection = ({
         fontWeight: "bold",
       }}
     >
-      Paramètres de notification officielle
+      {t("Paramètres de notification officielle")}
     </h6>
 
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 250 }}>
         <label style={labelStyle}>Huissier partenaire:</label>
-        <select
+        <ReactSelectWithHidden
+          id={undefined}
           value={selectedHuissier || ""}
-          onChange={(e) => setSelectedHuissier(e.target.value || null)}
-          style={selectStyle}
-        >
-          <option value="">Sélectionner un huissier</option>
-          {huissiers.map((h) => (
-            <option key={h.idhuissier} value={h.idhuissier}>
-              {h.nomhuissier} - {h.telephonehuissier}
-            </option>
-          ))}
-        </select>
+          onChange={(val) => setSelectedHuissier(val || null)}
+          options={[{ value: "", label: "Sélectionner un huissier" },
+            ...huissiers.map((h) => ({ value: h.idhuissier, label: `${h.nomhuissier} - ${h.telephonehuissier}` }))]}
+          placeholder={t("Sélectionner un huissier")}
+        />
       </div>
 
       <div style={{ flex: 1, minWidth: 250, position: "relative" }}>
@@ -6049,7 +6184,7 @@ const NotificationParamsUsed = ({
         fontWeight: "bold",
       }}
     >
-      ✅ Paramètres de notification réutilisés automatiquement
+      ✅ {t("Paramètres de notification réutilisés automatiquement")}
     </h6>
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 200 }}>
@@ -6167,18 +6302,14 @@ const NotificationSelectionSection = ({
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <label style={labelStyle}>Huissier partenaire:</label>
-        <select
+        <ReactSelectWithHidden
+          id={undefined}
           value={selectedHuissier || ""}
-          onChange={(e) => setSelectedHuissier(e.target.value)}
-          style={selectStyle}
-        >
-          <option value="">Sélectionner un huissier</option>
-          {huissiers.map((h) => (
-            <option key={h.idhuissier} value={h.idhuissier}>
-              {h.nomhuissier}
-            </option>
-          ))}
-        </select>
+          onChange={(val) => setSelectedHuissier(val || "")}
+          options={[{ value: "", label: "Sélectionner un huissier" },
+            ...huissiers.map((h) => ({ value: h.idhuissier, label: h.nomhuissier }))]}
+          placeholder={t("Sélectionner un huissier")}
+        />
       </div>
       <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
         <label style={labelStyle}>Destinataire/Opposant:</label>
@@ -6331,22 +6462,30 @@ const InspectionFields = ({ index }) => (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <label style={labelStyle}>Type d'intervention:</label>
-        <select id={`type-intervention-${index}`} style={selectStyle}>
-          <option value="">Sélectionner le type</option>
-          <option value="inspection_lieu">Inspection de lieu</option>
-          <option value="recherche_documents">Recherche de documents</option>
-          <option value="enquete">Enquête</option>
-          <option value="verification">Vérification</option>
-        </select>
+        <ReactSelectWithHidden
+          id={`type-intervention-${index}`}
+          options={[
+            { value: "", label: "Sélectionner le type" },
+            { value: "inspection_lieu", label: "Inspection de lieu" },
+            { value: "recherche_documents", label: "Recherche de documents" },
+            { value: "enquete", label: "Enquête" },
+            { value: "verification", label: "Vérification" },
+          ]}
+          placeholder={"Sélectionner le type"}
+        />
       </div>
       <div style={{ flex: 1, minWidth: 200 }}>
         <label style={labelStyle}>Intervenant:</label>
-        <select id={`intervenant-inspection-${index}`} style={selectStyle}>
-          <option value="">Sélectionner l'intervenant</option>
-          <option value="huissier">Huissier</option>
-          <option value="expert">Expert</option>
-          <option value="enqueteur">Enquêteur</option>
-        </select>
+        <ReactSelectWithHidden
+          id={`intervenant-inspection-${index}`}
+          options={[
+            { value: "", label: "Sélectionner l'intervenant" },
+            { value: "huissier", label: "Huissier" },
+            { value: "expert", label: "Expert" },
+            { value: "enqueteur", label: "Enquêteur" },
+          ]}
+          placeholder={"Sélectionner l'intervenant"}
+        />
       </div>
     </div>
   </div>
@@ -6363,22 +6502,27 @@ const ExpertiseFields = ({ index }) => (
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1, minWidth: 200 }}>
         <label style={labelStyle}>Type d'expertise:</label>
-        <select id={`type-expertise-${index}`} style={selectStyle}>
-          <option value="">Sélectionner le type</option>
-          <option value="verification">Vérification</option>
-          <option value="technique">Expertise technique</option>
-          <option value="medicale">Expertise médicale</option>
-          <option value="comptable">Expertise comptable</option>
-          <option value="immobiliere">Expertise immobilière</option>
-          <option value="psychologique">Expertise psychologique</option>
-        </select>
+        <ReactSelectWithHidden
+          id={`type-expertise-${index}`}
+          options={[
+            { value: "", label: "Sélectionner le type" },
+            { value: "verification", label: "Vérification" },
+            { value: "technique", label: "Expertise technique" },
+            { value: "medicale", label: "Expertise médicale" },
+            { value: "comptable", label: "Expertise comptable" },
+            { value: "immobiliere", label: "Expertise immobilière" },
+            { value: "psychologique", label: "Expertise psychologique" },
+          ]}
+          placeholder={"Sélectionner le type"}
+        />
       </div>
       <div style={{ flex: 1, minWidth: 200 }}>
         <label style={labelStyle}>Expert:</label>
-        <select id={`expert-selection-${index}`} style={selectStyle}>
-          <option value="">Sélectionner l'expert</option>
-          {/* Chargement dynamique des experts possible  */}
-        </select>
+        <ReactSelectWithHidden
+          id={`expert-selection-${index}`}
+          options={[{ value: "", label: "Sélectionner l'expert" }]}
+          placeholder={"Sélectionner l'expert"}
+        />
       </div>
     </div>
   </div>
@@ -6389,6 +6533,9 @@ const AudienceTemoinsSection = ({
   gererChampsTemoins,
   ajouterTemoin,
 }) => (
+  (() => {
+    const { t } = useTranslation();
+    return (
   <>
     <div
       style={{
@@ -6421,7 +6568,7 @@ const AudienceTemoinsSection = ({
             onChange={(e) => gererChampsTemoins(index, e.target.value)}
             style={{ margin: 0 }}
           />
-          <span style={{ fontSize: 14 }}>Aucun témoin</span>
+          <span style={{ fontSize: 14 }}>{t("Sans témoins")}</span>
         </label>
 
         <label style={radioLabelStyle}>
@@ -6471,15 +6618,19 @@ const AudienceTemoinsSection = ({
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
               <label style={labelStyle}>Rôle:</label>
-              <select id={`role-temoin-${index}`} style={selectStyle}>
-                <option value="">Sélectionner le rôle</option>
-                <option value="témoin_principal">Témoin principal</option>
-                <option value="témoin_secondaire">Témoin secondaire</option>
-                <option value="expert">Expert</option>
-                <option value="témoin_technique">Témoin technique</option>
-                <option value="témoin_moral">Témoin moral</option>
-                <option value="témoin_audition">Témoin d'audition</option>
-              </select>
+              <ReactSelectWithHidden
+                id={`role-temoin-${index}`}
+                options={[
+                  { value: "", label: "Sélectionner le rôle" },
+                  { value: "témoin_principal", label: "Témoin principal" },
+                  { value: "témoin_secondaire", label: "Témoin secondaire" },
+                  { value: "expert", label: "Expert" },
+                  { value: "témoin_technique", label: "Témoin technique" },
+                  { value: "témoin_moral", label: "Témoin moral" },
+                  { value: "témoin_audition", label: "Témoin d'audition" },
+                ]}
+                placeholder={"Sélectionner le rôle"}
+              />
             </div>
           </div>
           <div
@@ -6525,6 +6676,8 @@ const AudienceTemoinsSection = ({
       </div>
     </div>
   </>
+    );
+  })()
 );
 
 const ObservationsUploadSection = ({
@@ -6748,6 +6901,8 @@ const ExecutionSection = ({
     }
   };
 
+  const { t } = useTranslation();
+  
   return (
     <div
       style={{
@@ -6767,63 +6922,67 @@ const ExecutionSection = ({
           fontWeight: "bold",
         }}
       >
-        ⚖️ Résultat de l'exécution du jugement
+        ⚖️ {t("Résultat de l'exécution du jugement")}
       </h6>
 
       {/* Sélection du type de PV */}
       <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>Type de procès-verbal :</label>
-        <select
+        <label style={labelStyle}>{t("Type de procès-verbal :")}</label>
+        <ReactSelectWithHidden
+          id={undefined}
           value={typePV}
-          onChange={(e) => setTypePV(e.target.value)}
-          style={selectStyle}
-        >
-          <option value="">Sélectionner le type de PV</option>
-          <option value="abstention">Abstention (عدم الحضور)</option>
-          <option value="paiement">Paiement (الدفع)</option>
-          <option value="pv_informatif">PV Informatif (إخباري)</option>
-        </select>
+          onChange={(val) => setTypePV(val)}
+          options={[
+            { value: "", label: t("Sélectionner le type de PV") },
+            { value: "abstention", label: t("Abstention (عدم الحضور)") },
+            { value: "paiement", label: t("Paiement (الدفع)") },
+            { value: "pv_informatif", label: t("PV Informatif (إخباري)") },
+          ]}
+          placeholder={t("Sélectionner le type de PV")}
+        />
       </div>
 
       {/* Champs pour PAIEMENT */}
       {typePV === "paiement" && (
         <div style={{ marginBottom: 16 }}>
           <h6 style={{ margin: "0 0 8px 0", fontSize: 13, color: "#2e7d32" }}>
-            💰 Détails du paiement
+            💰 {t("Détails du paiement")}
           </h6>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={labelStyle}>Montant payé (DH):</label>
+              <label style={labelStyle}>{t("Montant payé (DH):")}</label>
               <input
                 type="number"
                 value={montantPaye}
                 onChange={(e) => setMontantPaye(e.target.value)}
-                placeholder="Montant en dirhams"
+                placeholder={t("Montant en dirhams")}
                 style={inputStyle}
               />
             </div>
             <div style={{ flex: 1, minWidth: 200 }}>
-              <label style={labelStyle}>Mode de paiement:</label>
-              <select
+              <label style={labelStyle}>{t("Mode de paiement:")}</label>
+              <ReactSelectWithHidden
+                id={undefined}
                 value={modePaiement}
-                onChange={(e) => setModePaiement(e.target.value)}
-                style={selectStyle}
-              >
-                <option value="">Sélectionner</option>
-                <option value="especes">Espèces</option>
-                <option value="cheque">Chèque</option>
-                <option value="virement">Virement bancaire</option>
-                <option value="carte">Carte bancaire</option>
-              </select>
+                onChange={(val) => setModePaiement(val)}
+                options={[
+                  { value: "", label: t("Sélectionner") },
+                  { value: "especes", label: t("Espèces") },
+                  { value: "cheque", label: t("Chèque") },
+                  { value: "virement", label: t("Virement bancaire") },
+                  { value: "carte", label: t("Carte bancaire") },
+                ]}
+                placeholder={t("Sélectionner")}
+              />
             </div>
           </div>
           <div style={{ marginTop: 8 }}>
-            <label style={labelStyle}>Numéro de reçu:</label>
+            <label style={labelStyle}>{t("Numéro de reçu:")}</label>
             <input
               type="text"
               value={numeroRecu}
               onChange={(e) => setNumeroRecu(e.target.value)}
-              placeholder="Numéro du reçu de paiement"
+              placeholder={t("Numéro du reçu de paiement")}
               style={inputStyle}
             />
           </div>
@@ -6834,14 +6993,14 @@ const ExecutionSection = ({
       {typePV === "pv_informatif" && (
         <div style={{ marginBottom: 16 }}>
           <h6 style={{ margin: "0 0 8px 0", fontSize: 13, color: "#2e7d32" }}>
-            PV informatif (إخباري)
+            {t("PV informatif (إخباري)")}
           </h6>
           <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Motif de l'absence:</label>
+            <label style={labelStyle}>{t("Motif de l'absence:")}</label>
             <textarea
               value={motifAbsence}
               onChange={(e) => setMotifAbsence(e.target.value)}
-              placeholder="Décrivez les tentatives effectuées, les lieux visités, les personnes contactées..."
+              placeholder={t("Décrivez les tentatives effectuées, les lieux visités, les personnes contactées...")}
               style={{
                 ...textareaStyle,
                 minHeight: "80px",
@@ -6856,7 +7015,7 @@ const ExecutionSection = ({
                 onChange={(e) => setDemandeCoercition(e.target.checked)}
                 style={{ marginRight: 8 }}
               />
-              Demande de coercition urgente
+              {t("Demande de coercition urgente")}
             </label>
           </div>
           <div
@@ -6870,7 +7029,7 @@ const ExecutionSection = ({
               color: "#856404",
             }}
           >
-            ⚠️ PV informatif établi - Réclamation urgente pour coercition
+            ⚠️ {t("PV informatif établi - Réclamation urgente pour coercition")}
           </div>
         </div>
       )}
@@ -6879,14 +7038,14 @@ const ExecutionSection = ({
       {typePV === "abstention" && (
         <div style={{ marginBottom: 16 }}>
           <h6 style={{ margin: "0 0 8px 0", fontSize: 13, color: "#2e7d32" }}>
-            ❌ PV d'abstention
+            ❌ {t("PV d'abstention")}
           </h6>
           <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Observations d'abstention:</label>
+            <label style={labelStyle}>{t("Observations d'abstention:")}</label>
             <textarea
               value={commentaires}
               onChange={(e) => setCommentaires(e.target.value)}
-              placeholder="Décrivez les circonstances de l'abstention, les tentatives de contact..."
+              placeholder={t("Décrivez les circonstances de l'abstention, les tentatives de contact...")}
               style={{
                 ...textareaStyle,
                 minHeight: "80px",
@@ -6904,7 +7063,7 @@ const ExecutionSection = ({
               color: "#c62828",
             }}
           >
-            ❌ Le débiteur ne s'est pas présenté - Poursuite des procédures
+            ❌ {t("Le débiteur ne s'est pas présenté - Poursuite des procédures")}
           </div>
         </div>
       )}
@@ -6928,21 +7087,23 @@ const ExecutionSection = ({
       {/* Sélection de l'huissier d'exécution */}
       <div style={{ marginTop: 16 }}>
         <h6 style={{ margin: "0 0 8px 0", fontSize: 13, color: "#2e7d32" }}>
-          Huissier chargé de l'exécution
+          {t("Huissier chargé de l'exécution")}
         </h6>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <div style={{ flex: 1, minWidth: 250 }}>
-            <label style={labelStyle}>Huissier d'exécution:</label>
-            <select
+            <label style={labelStyle}>{t("Huissier d'exécution:")}</label>
+            <ReactSelectWithHidden
+              id={undefined}
               value={huissierExecution || ""}
-              onChange={(e) => setHuissierExecution(e.target.value || null)}
-              style={selectStyle}
-            >
-              <option value="">Sélectionner un huissier</option>
-              <option value="1">Huissier 1 - Tél: 0123456789</option>
-              <option value="2">Huissier 2 - Tél: 0987654321</option>
-              <option value="3">Huissier 3 - Tél: 0555666777</option>
-            </select>
+              onChange={(val) => setHuissierExecution(val || null)}
+              options={[
+                { value: "", label: t("Sélectionner un huissier") },
+                { value: "1", label: "Huissier 1 - Tél: 0123456789" },
+                { value: "2", label: "Huissier 2 - Tél: 0987654321" },
+                { value: "3", label: "Huissier 3 - Tél: 0555666777" },
+              ]}
+              placeholder={t("Sélectionner un huissier")}
+            />
           </div>
         </div>
       </div>

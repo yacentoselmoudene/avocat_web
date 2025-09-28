@@ -185,19 +185,109 @@ class Audience(models.Model):
 
 
 class Avocat(models.Model):
-    idavocat = models.CharField(db_column='idAvocat', primary_key=True, max_length=50, db_collation='utf8mb4_unicode_ci')  # Field name made lowercase.
+    idavocat = models.AutoField(db_column='idAvocat', primary_key=True, max_length=50)
     nomavocat_fr = models.CharField(db_column='nomAvocat_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     nomavocat_ar = models.CharField(db_column='nomAvocat_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     specialisation = models.CharField(max_length=255, db_collation='utf8mb4_unicode_ci', blank=True, null=True)
+    prenom_fr = models.CharField(
+        db_column='prenom_fr',
+        max_length=255,
+        db_collation='utf8mb4_unicode_ci',
+        null=True,
+        blank=True
+    )
+    prenom_ar = models.CharField(
+        db_column='prenom_ar',
+        max_length=255,
+        db_collation='utf8mb4_unicode_ci',
+        null=True,
+        blank=True
+    )
+
+    telephone = models.CharField(
+        db_column='telephone',
+        max_length=20,
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+    email = models.EmailField(
+        db_column='email',
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    # Adresse
+    adresse_fr = models.TextField(
+        db_column='adresse_fr',
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+    adresse_ar = models.TextField(
+        db_column='adresse_ar',
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+
+    ville_fr = models.CharField(
+        db_column='ville_fr',
+        max_length=100,
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+    ville_ar = models.CharField(
+        db_column='ville_ar',
+        max_length=100,
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+
+    # Barreau
+    barreau = models.CharField(
+        db_column='barreau',
+        max_length=100,
+        db_collation='utf8mb4_unicode_ci',
+        blank=True,
+        null=True
+    )
+
+    @property
+    def nom_complet(self):
+        # Combine first name with the family name field used in the model
+        return f"{self.prenom_fr or ''} {self.nomavocat_fr or ''}".strip()
 
     class Meta:
         managed = True
         db_table = 'avocat'
 
+    def __str__(self):
+        return f"{self.prenom_fr or ''} {self.nomavocat_fr or ''} - {self.barreau or ''}"
+
+
 class Client(models.Model):
     idclient = models.AutoField(db_column='idClient', primary_key=True)
     nomclient_fr = models.CharField(db_column='nomClient_fr', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
     nomclient_ar = models.CharField(db_column='nomClient_ar', max_length=255, db_collation='utf8mb4_unicode_ci', null=True, blank=True)
+    # Référence unique saisie par l'avocat
+    reference_client = models.CharField(
+        db_column='reference_client',
+        max_length=50,
+        unique=True,
+        null=True,
+        blank=True,
+        error_messages={
+            'unique': "Cette référence client existe déjà."
+        }
+
+    )
+    # Champs pour la société (si type client = société)
+    raison_sociale_fr = models.CharField(db_column='raisonSociale_fr', max_length=255, null=True, blank=True, help_text='Raison sociale en français')
+    raison_sociale_ar = models.CharField(db_column='raisonSociale_ar', max_length=255, null=True, blank=True, help_text='الاسم التجاري')
     adresse1_fr = models.CharField(db_column='adresse1_fr', max_length=255, blank=True, null=True)
     adresse1_ar = models.CharField(db_column='adresse1_ar', max_length=255, blank=True, null=True)
     prenomclient_fr = models.CharField(db_column='prenomClient_fr', max_length=255, blank=True, null=True)
@@ -209,6 +299,8 @@ class Client(models.Model):
     email = models.EmailField(db_column='email', max_length=255, blank=True, null=True)
     idtypeclient = models.ForeignKey('TypeClient', models.DO_NOTHING, db_column='idTypeClient', blank=True, null=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True,db_column='user_id')  # pour lier au User
+    # Type de société (optionnel, utilisé si client est une société)
+    idtypesociete = models.ForeignKey('TypeSociete', on_delete=models.SET_NULL, null=True, blank=True, db_column='idTypeSociete')
 
     class Meta:
         managed = True
@@ -567,6 +659,19 @@ class TypeClient(models.Model):
         managed = True
         db_table = 'type_client'
 
+
+
+class TypeSociete(models.Model):
+    idtypesociete = models.AutoField(db_column='idTypeSociete', primary_key=True)
+    libelletypesociete_fr = models.CharField(db_column='libelleTypeSociete_fr', max_length=100, null=True, blank=True)
+    libelletypesociete_ar = models.CharField(db_column='libelleTypeSociete_ar', max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return self.libelletypesociete_fr or self.libelletypesociete_ar or ''
+
+    class Meta:
+        managed = True
+        db_table = 'type_societe'
 
 
 class TypeContrat(models.Model):
