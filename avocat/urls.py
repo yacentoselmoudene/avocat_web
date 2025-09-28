@@ -37,11 +37,13 @@ from api.views import (
     ExpertViewSet,
     HuissierViewSet,
     TypeInterventionViewSet,
+    TypeSocieteViewSet,
     enregistrer_pv_execution,
     NotificationViewSet,
     DeviceViewSet,
     password_reset_request,
     password_reset_confirm,
+    CheckClientReferenceView
 )
 
 from rest_framework_simplejwt.views import (
@@ -77,6 +79,7 @@ router.register(r'participationhuissieretapes', ParticipationhuissieretapeViewSe
 router.register(r'experts', ExpertViewSet)
 router.register(r'huissiers', HuissierViewSet)
 router.register(r'typeinterventions', TypeInterventionViewSet)
+router.register(r'typesocietes', TypeSocieteViewSet)
 router.register(r'affairejudiciaires', AffairejudiciaireViewSet, basename='affairejudiciaire')
 router.register(r'notifications', NotificationViewSet, basename='notification')
 router.register(r'devices', DeviceViewSet, basename='device')
@@ -129,7 +132,8 @@ urlpatterns = [
     # Listes globales de fichiers/documents
     path('api/fichiers/', views.get_tous_fichiers, name='get_tous_fichiers'),
     path('api/documents/', views.get_tous_documents, name='get_tous_documents'),
-    
+    # refrence
+    path('api/clients/check-reference/<str:reference>/', CheckClientReferenceView.as_view(),name='check-client-reference'),
     # Endpoint pour déclencher les rappels de rendez-vous (cron job)
     path('api/rappels-rdv/', views.trigger_rdv_reminders, name='trigger_rdv_reminders'),
 

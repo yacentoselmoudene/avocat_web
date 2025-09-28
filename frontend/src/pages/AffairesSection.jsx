@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import WorkflowPage from "../pages/WorkflowPage";
 import RendezVousModal from "../components/RendezVousModal";
+import Select from "react-select";
 
 export default function AffairesSection() {
   const { t, i18n } = useTranslation();
@@ -22,8 +23,8 @@ export default function AffairesSection() {
   const [editingId, setEditingId] = useState(null);
   const [editAffaire, setEditAffaire] = useState({});
   const [detailAffaire, setDetailAffaire] = useState(null);
-  const [statuts, setStatuts] = useState([]);
-  const [filterStatut, setFilterStatut] = useState("");
+  // const [statuts, setStatuts] = useState([]);
+  // const [filterStatut, setFilterStatut] = useState("");
   const [typesClient, setTypesClient] = useState([]);
   const [filterTypeClient, setFilterTypeClient] = useState("");
   const [typesAffaire, setTypesAffaire] = useState([]);
@@ -40,6 +41,7 @@ export default function AffairesSection() {
   const [villesDisponibles, setVillesDisponibles] = useState([]);
   const [villeSelectionnee, setVilleSelectionnee] = useState("");
   const [tribunalSelectionne, setTribunalSelectionne] = useState(null);
+  const [addFilterTypeClient, setAddFilterTypeClient] = useState("");
   // Ajoutez ces états pour la progression
   const [workflowModal, setWorkflowModal] = useState({
     show: false,
@@ -47,6 +49,42 @@ export default function AffairesSection() {
   });
   const [etapesActuelles, setEtapesActuelles] = useState({});
   const [progressions, setProgressions] = useState({});
+
+  // Priorisation  des villes (Souss-Massa et régions du Sud)
+  // Tokens FR/AR pour booster les villes prioritaires (Souss‑Massa + Sud)
+  const preferredCityTokens = [
+    // Agadir
+    "agadir", "أكادير", "اكادير",
+    "inzgane", "inzegane", "inezgane", "إنزكان", "انزكان",
+    "ait melloul", "أيت ملول", "ايت ملول",
+    "chtouka", "اشتوكة", "أشتوكة", "ait baha", "آيت باها",
+    // Villes régionales
+    "tiznit", "تزنيت",
+    "taroudant", "تارودانت",
+    "tata", "طاطا",
+    // Sud
+    "guelmim", "كلميم",
+    "tan-tan", "tantan", "طانطان",
+    "sidi ifni", "سيدي افني", "سيدي إفني",
+    "laayoune", "laâyoune", "العيون",
+    "dakhla", "الداخلة",
+    "tarfaya", "طرافاية", "طرفاية",
+  ].map((s) => String(s).toLowerCase());
+
+  const isPreferredCity = (name) => {
+    const n = String(name || "").toLowerCase().trim();
+    if (!n) return false;
+    return preferredCityTokens.some((tok) => n.includes(tok));
+  };
+
+  const sortCitiesByPreference = (cities) => {
+    return (cities || []).slice().sort((a, b) => {
+      const sa = isPreferredCity(a) ? 1 : 0;
+      const sb = isPreferredCity(b) ? 1 : 0;
+      if (sb - sa !== 0) return sb - sa;
+      return String(a).localeCompare(String(b), undefined, { sensitivity: "base" });
+    });
+  };
 
   // États pour le modal de rendez-vous
   const [rendezVousModal, setRendezVousModal] = useState({
@@ -84,12 +122,12 @@ export default function AffairesSection() {
       .then((res) => setClients(res.data))
       .catch(() => {});
   };
-  const fetchStatuts = () => {
-    api
-      .get("statutaffaires/")
-      .then((res) => setStatuts(res.data))
-      .catch(() => {});
-  };
+  // const fetchStatuts = () => {
+  //   api
+  //     .get("statutaffaires/")
+  //     .then((res) => setStatuts(res.data))
+  //     .catch(() => {});
+  // };
   const fetchTypesClient = () => {
     api
       .get("typeclients/")
@@ -136,7 +174,7 @@ export default function AffairesSection() {
             const villes = [
               ...new Set(data.tribunaux.map((t) => t.ville).filter(Boolean)),
             ];
-            setVillesDisponibles(villes);
+            setVillesDisponibles(sortCitiesByPreference(villes));
             setVilleSelectionnee("");
             setTribunalSelectionne(null);
           }
@@ -161,7 +199,7 @@ export default function AffairesSection() {
   useEffect(() => {
     fetchAffaires();
     fetchClients();
-    fetchStatuts();
+    // fetchStatuts();
     fetchTypesClient();
     fetchTypesAffaire();
     fetchFonctions();
@@ -285,13 +323,72 @@ export default function AffairesSection() {
         return typeFromCode === filterType;
       })();
 
-    const matchStatut = filterStatut === "" || statut === filterStatut;
-    return matchSearch && matchTypeClient && matchType && matchStatut;
+  // const matchStatut = filterStatut === "" || statut === filterStatut;
+  return matchSearch && matchTypeClient && matchType; // && matchStatut;
   });
+
+  //   le filtrage des clients dans le formulaire d'ajout
+  const normalizeFr = (s) => {
+    const str = (s || '').toString().toLowerCase();
+    try {
+      return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    } catch (_e) {
+      // Fallback
+      return str.replace(/é/g, 'e').replace(/è/g, 'e').replace(/ê/g, 'e').replace(/à/g, 'a').replace(/î/g, 'i').replace(/ï/g, 'i').replace(/ô/g, 'o').replace(/û/g, 'u');
+    }
+  };
+  const getTypeClientFr = (client) => {
+    if (!client) return '';
+    if (client.type_client) {
+      const fr = client.type_client.libelletypeclient_fr || client.type_client.libelletypeclient_ar || '';
+      return normalizeFr(fr);
+    }
+    const typeObj = typesClient.find(t => t.idtypeclient === (typeof client.idtypeclient === 'object' ? client.idtypeclient?.idtypeclient : client.idtypeclient));
+    const fr = typeObj?.libelletypeclient_fr || typeObj?.libelletypeclient_ar || '';
+    return normalizeFr(fr);
+  };
+  const filteredClientsForAdd = (clients || []).filter(c => !addFilterTypeClient || getTypeClientFr(c) === addFilterTypeClient);
+
+  // Affichage du nom client selon type (personne vs société) et langue
+  const isSocieteClient = (client) => {
+    const typeFr = getTypeClientFr(client);
+    return typeFr === 'societe';
+  };
+  const getClientDisplayLabel = (client) => {
+    if (!client) return '';
+    if (isSocieteClient(client)) {
+      const rsAr = client.raison_sociale_ar || '';
+      const rsFr = client.raison_sociale_fr || '';
+      return (i18n.language === 'ar' ? (rsAr || rsFr) : (rsFr || rsAr)) || (client.nomclient_fr || client.nomclient_ar || client.nomclient || '');
+    }
+    const fullAr = `${client.nomclient_ar || client.nomclient_fr || client.nomclient || ''} ${client.prenomclient_ar || client.prenomclient_fr || ''}`.trim();
+    const fullFr = `${client.nomclient_fr || client.nomclient_ar || client.nomclient || ''} ${client.prenomclient_fr || client.prenomclient_ar || ''}`.trim();
+    const chosen = i18n.language === 'ar' ? fullAr : fullFr;
+    if (chosen) return chosen;
+    // Fallback: si particulier avec noms vides mais raison sociale présente (données incohérentes)
+    const rsFallback = i18n.language === 'ar'
+      ? (client.raison_sociale_ar || client.raison_sociale_fr || '')
+      : (client.raison_sociale_fr || client.raison_sociale_ar || '');
+    return rsFallback || (i18n.language === 'ar' ? 'عميل بدون اسم' : 'Client sans nom');
+  };
+
+  // Récupérer le label d'affichage du client pour une affaire (tableau)
+  const getAffaireClientDisplayName = (affaire) => {
+    const client = clients.find(
+      (c) => String(c.idclient) === String(affaire.idclient),
+    );
+    if (client) return getClientDisplayLabel(client);
+    // Fallback sur champs sérialisés
+    const ar = typeof affaire.client_nom === 'object' ? affaire.client_nom.ar : undefined;
+    const fr = typeof affaire.client_nom === 'object' ? affaire.client_nom.fr : undefined;
+    const ser = typeof affaire.client_nom === 'string' ? affaire.client_nom : undefined;
+    const byLang = i18n.language === 'ar' ? (ar || fr || ser) : (fr || ar || ser);
+    return byLang || t('Non assigné');
+  };
 
   // Affichage du type d'affaire basé sur le code
   const getTypeAffaireLabel = (affaire) => {
-    // Utiliser le type d'affaire du sérialiseur si disponible
+    // Utiliser le type d'affaire du sérialiseur
     if (affaire.type_affaire_libelle) {
       return affaire.type_affaire_libelle;
     }
@@ -324,7 +421,7 @@ export default function AffairesSection() {
       : "Non défini";
   };
 
-  //  obtenir le type d'affaire basé sur la classification
+  //   le type d'affaire basé sur la classification
   const getTypeAffaireFromClassification = (classification) => {
     if (!classification || !classification.type_principale) return null;
 
@@ -355,7 +452,7 @@ export default function AffairesSection() {
     try {
       //  Fonction dynamique
       const idfonctionclient = await getOrCreateFonctionId(roleClient);
-      // 2. Création de l'opposant si selectioné
+      // Création de l'opposant si selectioné
       let idopposant = null;
       if (roleClient === "opposant") {
         const client = clients.find(
@@ -503,7 +600,7 @@ export default function AffairesSection() {
       setTribunalSelectionne(null);
 
       fetchAffaires();
-      fetchStatuts();
+      // fetchStatuts();
     } catch (err) {
       setError(
         err.response?.data ? JSON.stringify(err.response.data) : err.message,
@@ -799,32 +896,46 @@ export default function AffairesSection() {
                 }}
               />
               {/*         <input type="date" placeholder="Date clôture" value={dateCloture} onChange={e => setDateCloture(e.target.value)} style={{ width: "100%", marginBottom: 14, height: 44, padding: "10px 14px", background: "#fff", color: "#333", border: "1.5px solid #e0e0e0", borderRadius: 6, fontSize: 18 }} /> */}
-              <select
-                value={idclient}
-                onChange={(e) => setIdclient(e.target.value)}
-                required
-                style={{
-                  width: "100%",
-                  marginBottom: 10,
-                  height: 44,
-                  padding: "10px 14px",
-                  background: "#fff",
-                  color: "#333",
-                  border: "1.5px solid #e0e0e0",
-                  borderRadius: 6,
-                  fontSize: 18,
+              {/* Filtre par type de client (recherche) */}
+              <div style={{ marginBottom: 10 }}>
+                <Select
+                  value={(typesClient || []).map(tc => ({
+                    value: normalizeFr(tc.libelletypeclient_fr || tc.libelletypeclient_ar || ''),
+                    label: i18n.language === 'ar' ? (tc.libelletypeclient_ar || tc.libelletypeclient_fr || '') : (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '')
+                  })).find(opt => opt.value === addFilterTypeClient) || null}
+                  onChange={(selected) => setAddFilterTypeClient(selected?.value || '')}
+                  options={(typesClient || []).map(tc => ({
+                    value: normalizeFr(tc.libelletypeclient_fr || tc.libelletypeclient_ar || ''),
+                    label: i18n.language === 'ar' ? (tc.libelletypeclient_ar || tc.libelletypeclient_fr || '') : (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '')
+                  }))}
+                  placeholder={t("Filtrer par type de client")}
+                  isSearchable={true}
+                  isClearable={true}
+                  styles={{
+                    control: (p,s) => ({...p, minHeight: 44, border: '1.5px solid #e0e0e0', boxShadow: 'none'}),
+                    indicatorSeparator: () => ({ display: 'none' })
+                  }}
+                />
+              </div>
+              {/* Sélection du client (recherche) */}
+              <Select
+                value={filteredClientsForAdd.map(c => ({
+                  value: String(c.idclient),
+                  label: getClientDisplayLabel(c)
+                })).find(opt => opt.value === String(idclient)) || null}
+                onChange={(selected) => setIdclient(selected?.value || '')}
+                options={filteredClientsForAdd.map(c => ({
+                  value: String(c.idclient),
+                  label: getClientDisplayLabel(c)
+                }))}
+                placeholder={t("Sélectionner un client")}
+                isSearchable={true}
+                isClearable={true}
+                styles={{
+                  control: (p,s) => ({...p, minHeight: 44, border: '1.5px solid #e0e0e0', boxShadow: 'none'}),
+                  indicatorSeparator: () => ({ display: 'none' })
                 }}
-              >
-                <option value="">{t("Sélectionner un client")}</option>
-                {clients.map((c) => (
-                  <option key={c.idclient} value={c.idclient}>
-                    {i18n.language === 'ar' ? 
-                      (c.nomclient_ar || c.nomclient_fr || c.nomclient) + ' ' + (c.prenomclient_ar || c.prenomclient_fr || '') :
-                      (c.nomclient_fr || c.nomclient_ar || c.nomclient) + ' ' + (c.prenomclient_fr || c.prenomclient_ar || '')
-                    }
-                  </option>
-                ))}
-              </select>
+              />
               {/* Boutons radio */}
               <div
                 style={{
@@ -986,7 +1097,7 @@ export default function AffairesSection() {
                       fontWeight: "bold",
                     }}
                   >
-                    Tribunaux suggérés pour cette affaire
+                    {t("Tribunaux suggérés pour cette affaire")}
                   </h5>
 
                   {/* Statistiques */}
@@ -1002,9 +1113,7 @@ export default function AffairesSection() {
                     }}
                   >
                     <span style={{ color: "#666" }}>
-                      {tribunaux.length} tribunal
-                      {tribunaux.length > 1 ? "aux" : ""} trouvé
-                      {tribunaux.length > 1 ? "s" : ""}
+                      {t("Tribunaux trouvés")} {tribunaux.length}
                     </span>
                     {villeSelectionnee && (
                       <span style={{ color: "#1976d2" }}>
@@ -1025,32 +1134,29 @@ export default function AffairesSection() {
                           color: "#333",
                         }}
                       >
-                        Filtrer par ville :
+                        {t("Filtrer par ville")} :
                       </label>
-                      <select
-                        value={villeSelectionnee}
-                        onChange={(e) => setVilleSelectionnee(e.target.value)}
-                        style={{
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1.5px solid #e0e0e0",
-                          borderRadius: 6,
-                          fontSize: 14,
-                          background: "#fff",
-                          cursor: "pointer",
+                      <Select
+                        value={villesDisponibles
+                          .map((v) => ({ value: v, label: v }))
+                          .find((opt) => opt.value === villeSelectionnee) || null}
+                        onChange={(selected) => setVilleSelectionnee(selected?.value || "")}
+                        options={villesDisponibles.map((v) => ({ value: v, label: v }))}
+                        placeholder={`${t("Toutes les villes")} (${villesDisponibles.length})`}
+                        isSearchable={true}
+                        isClearable={true}
+                        styles={{
+                          control: (p, s) => ({
+                            ...p,
+                            minHeight: 44,
+                            border: "1.5px solid #e0e0e0",
+                            boxShadow: "none",
+                          }),
+                          indicatorSeparator: () => ({ display: "none" }),
+                          menu: (p) => ({ ...p, zIndex: 5 }),
                         }}
-                      >
-                        <option value="">
-                          {" "}
-                          Toutes les villes ({villesDisponibles.length})
-                        </option>
-                        {villesDisponibles.map((ville) => (
-                          <option key={ville} value={ville}>
-                            {" "}
-                            {ville}
-                          </option>
-                        ))}
-                      </select>
+                        noOptionsMessage={() => "Aucune ville"}
+                      />
                     </div>
                   )}
 
@@ -1070,6 +1176,12 @@ export default function AffairesSection() {
                           !villeSelectionnee ||
                           tribunal.ville === villeSelectionnee,
                       )
+                      .sort((a, b) => {
+                        const sa = isPreferredCity(a.ville) ? 1 : 0;
+                        const sb = isPreferredCity(b.ville) ? 1 : 0;
+                        if (sb - sa !== 0) return sb - sa;
+                        return String(a.nom || "").localeCompare(String(b.nom || ""), undefined, { sensitivity: "base" });
+                      })
                       .map((tribunal, index) => (
                         <div
                           key={tribunal.id}
@@ -1362,83 +1474,98 @@ export default function AffairesSection() {
             width: 220,
           }}
         />
-        <select
-          value={filterTypeClient}
-          onChange={(e) => setFilterTypeClient(e.target.value)}
-          style={{
-            height: 35,
-            padding: "4px 8px",
-            background: "#fff",
-            color: "#333",
-            border: "1px solid #e0e0e0",
-            borderRadius: 4,
-            fontSize: 14,
-          }}
-        >
-          <option value="">{t("Tous les types de client")}</option>
-          {typesClient.map((typeItem) => {
-            const typeLabel = typeItem.libelletypeclient_fr || typeItem.libelletypeclient_ar || '';
-            const normalizedLabel = typeLabel.toLowerCase().replace('é', 'e');
-            
-            // Debug temporaire
-            console.log('Debug type client:', {
-              original: typeLabel,
-              normalized: normalizedLabel,
-              translation: t(normalizedLabel),
-              directTranslation: t(typeLabel.toLowerCase())
-            });
-            
-            return (
-              <option
-                key={typeItem.idtypeclient}
-                value={normalizedLabel}
-              >
-                {t(typeLabel.toLowerCase())}
-              </option>
-            );
-          })}
-        </select>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          style={{
-            height: 35,
-            padding: "4px 8px",
-            background: "#fff",
-            color: "#333",
-            border: "1px solid #e0e0e0",
-            borderRadius: 4,
-            fontSize: 14,
-          }}
-        >
-          <option value="">{t("Tous les types d'affaire")}</option>
-          <option value="مدني">مدني (Civil)</option>
-          <option value="جنائي">جنائي (Pénal)</option>
-          <option value="إدارية">إدارية (Administratif)</option>
-          <option value="تجاري">تجاري (Commercial)</option>
-        </select>
-        <select
-          value={filterStatut}
-          onChange={(e) => setFilterStatut(e.target.value)}
-          style={{
-            height: 35,
-            padding: "4px 8px",
-            background: "#fff",
-            color: "#333",
-            border: "1px solid #e0e0e0",
-            borderRadius: 4,
-            fontSize: 14,
-          }}
-        >
-          <option value="">{t("Tous les statuts")}</option>
-          {[...new Set(statuts.map((s) => s.libellestatutaffaire))].map(
-            (st) => (
-              <option key={st} value={st}>
-                {st}
-              </option>
-            ),
-          )}
-        </select>
+        <div style={{ minWidth: 240 }}>
+          <Select
+            value={(typesClient || []).map(tc => ({
+              value: (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '').toLowerCase().replace('é','e'),
+              label: i18n.language === 'ar' ? (tc.libelletypeclient_ar || tc.libelletypeclient_fr || '') : (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '')
+            })).find(opt => opt.value === filterTypeClient) || null}
+            onChange={(selected) => setFilterTypeClient(selected?.value || '')}
+            options={(typesClient || []).map(tc => ({
+              value: (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '').toLowerCase().replace('é','e'),
+              label: i18n.language === 'ar' ? (tc.libelletypeclient_ar || tc.libelletypeclient_fr || '') : (tc.libelletypeclient_fr || tc.libelletypeclient_ar || '')
+            }))}
+            placeholder={t("Tous les types de client")}
+            isSearchable={true}
+            isClearable={true}
+            styles={{
+              control: (provided, state) => ({
+                ...provided,
+                minHeight: '35px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                boxShadow: 'none',
+                '&:hover': { border: '1px solid #e0e0e0' },
+                ...(state.isFocused && { border: '1px solid #e0e0e0', boxShadow: 'none' }),
+              }),
+              placeholder: (p) => ({ ...p, color: '#999' }),
+              indicatorSeparator: () => ({ display: 'none' }),
+              dropdownIndicator: (p) => ({ ...p, color: '#999' }),
+              menu: (p) => ({ ...p, zIndex: 5 })
+            }}
+          />
+        </div>
+        <div style={{ minWidth: 240 }}>
+          <Select
+            value={[
+              { value: '', label: t("Tous les types d'affaire") },
+              { value: 'مدني', label: 'مدني (Civil)' },
+              { value: 'جنائي', label: 'جنائي (Pénal)' },
+              { value: 'إدارية', label: 'إدارية (Administratif)' },
+              { value: 'تجاري', label: 'تجاري (Commercial)' },
+            ].find(opt => opt.value === filterType) || null}
+            onChange={(selected) => setFilterType(selected?.value || '')}
+            options={[
+              { value: 'مدني', label: 'مدني (Civil)' },
+              { value: 'جنائي', label: 'جنائي (Pénal)' },
+              { value: 'إدارية', label: 'إدارية (Administratif)' },
+              { value: 'تجاري', label: 'تجاري (Commercial)' },
+            ]}
+            placeholder={t("Tous les types d'affaire")}
+            isSearchable={true}
+            isClearable={true}
+            styles={{
+              control: (provided, state) => ({
+                ...provided,
+                minHeight: '35px',
+                border: '1px solid #e0e0e0',
+                borderRadius: '4px',
+                boxShadow: 'none',
+                '&:hover': { border: '1px solid #e0e0e0' },
+                ...(state.isFocused && { border: '1px solid #e0e0e0', boxShadow: 'none' }),
+              }),
+              placeholder: (p) => ({ ...p, color: '#999' }),
+              indicatorSeparator: () => ({ display: 'none' }),
+              dropdownIndicator: (p) => ({ ...p, color: '#999' }),
+              menu: (p) => ({ ...p, zIndex: 5 })
+            }}
+          />
+        </div>
+        {/* Filtre statut  */}
+        {false && (
+          <select
+            value={filterStatut}
+            onChange={(e) => setFilterStatut(e.target.value)}
+            style={{
+              height: 35,
+              padding: "4px 8px",
+              background: "#fff",
+              color: "#333",
+              border: "1px solid #e0e0e0",
+              borderRadius: 4,
+              fontSize: 14,
+            }}
+          >
+            <option value="">{t("Tous les statuts")}</option>
+            {[...new Set(statuts.map((s) => s.libellestatutaffaire))].map(
+              (st) => (
+                <option key={st} value={st}>
+                  {st}
+                </option>
+              ),
+            )}
+          </select>
+        )}
       </div>
       <table
         border="0"
@@ -1499,17 +1626,20 @@ export default function AffairesSection() {
             >
               {t("Type d'affaire")}
             </th>
-            <th
-              style={{
-                padding: "12px 8px",
-                color: "#1a237e",
-                fontWeight: "bold",
-                textAlign: "left",
-                borderBottom: "2px solid #1976d2",
-              }}
-            >
-              {t("Statut")}
-            </th>
+            {/* Statut  */}
+            {false && (
+              <th
+                style={{
+                  padding: "12px 8px",
+                  color: "#1a237e",
+                  fontWeight: "bold",
+                  textAlign: "left",
+                  borderBottom: "2px solid #1976d2",
+                }}
+              >
+                {t("Statut")}
+              </th>
+            )}
             <th
               style={{
                 padding: "12px 8px",
@@ -1618,10 +1748,7 @@ export default function AffairesSection() {
                     <option value="">{t("Sélectionner un client")}</option>
                     {clients.map((c) => (
                       <option key={c.idclient} value={c.idclient}>
-                        {i18n.language === 'ar' ? 
-                          (c.nomclient_ar || c.nomclient_fr || c.nomclient) + ' ' + (c.prenomclient_ar || c.prenomclient_fr || '') :
-                          (c.nomclient_fr || c.nomclient_ar || c.nomclient) + ' ' + (c.prenomclient_fr || c.prenomclient_ar || '')
-                        }
+                        {getClientDisplayLabel(c)}
                       </option>
                     ))}
                   </select>
@@ -1656,9 +1783,12 @@ export default function AffairesSection() {
                     ))}
                   </select>
                 </td>
-                <td style={{ padding: "8px", color: "#1a237e" }}>
-                  {a.statut_courant || "-"}
-                </td>
+                {/* Statut  */}
+                {false && (
+                  <td style={{ padding: "8px", color: "#1a237e" }}>
+                    {a.statut_courant || "-"}
+                  </td>
+                )}
                 <td style={{ padding: "8px", color: "#1a237e" }}>
                   <WorkflowStatus affaireId={a.idaffaire} />
                 </td>
@@ -1817,17 +1947,17 @@ export default function AffairesSection() {
                   {a.dateouverture}
                 </td>
                 <td style={{ padding: "8px", color: "#1a237e" }}>
-                  {typeof a.client_nom === 'object' ? 
-                    (i18n.language === 'ar' ? a.client_nom.ar : a.client_nom.fr) : 
-                    (a.client_nom || "Non assigné")
-                  }
+                  {getAffaireClientDisplayName(a)}
                 </td>
                 <td style={{ padding: "8px", color: "#1a237e" }}>
                   {getTypeAffaireLabel(a)}
                 </td>
-                <td style={{ padding: "8px", color: "#1a237e" }}>
-                  {a.statut_courant || "-"}
-                </td>
+                {/* Statut  */}
+                {false && (
+                  <td style={{ padding: "8px", color: "#1a237e" }}>
+                    {a.statut_courant || "-"}
+                  </td>
+                )}
                 <td style={{ padding: "8px", color: "#1a237e" }}>
                   <WorkflowStatus affaireId={a.idaffaire} />
                 </td>

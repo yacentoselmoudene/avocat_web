@@ -15,11 +15,11 @@ const TABLES = [
     field: "libelletypeaffaire",
   },
   { key: "typeclients", labelKey: "Types de client", field: "libelletypeclient" },
-  {
-    key: "statutaffaires",
-    labelKey: "Statuts d'affaire",
-    field: "libellestatutaffaire",
-  },
+  // {
+  //   key: "statutaffaires",
+  //   labelKey: "Statuts d'affaire",
+  //   field: "libellestatutaffaire",
+  // },
  
   { key: "tribunals", labelKey: "Tribunaux", field: "nomtribunal" },
   {
@@ -38,9 +38,20 @@ const TABLES = [
     labelKey: "Types d'intervention",
     field: "libelletypeintervention",
   },
+  {
+    key: "typesocietes",
+    labelKey: "Types de société",
+    field: "libelletypesociete",
+  },
+
+  {
+    key: "avocats",
+    labelKey: "Avocats",
+    field: "nom_complet",
+  },
 ];
 
-export default function ConfigModal({ onClose }) {
+export default function ConfigModal({ onClose, initialTableKey, openAvocatForm }) {
   const { t, i18n } = useTranslation();
   const isArabic = (i18n.language || "").startsWith("ar");
   const [selectedTable, setSelectedTable] = useState(TABLES[0]);
@@ -48,6 +59,8 @@ export default function ConfigModal({ onClose }) {
   const [newValue, setNewValue] = useState("");
   const [editIndex, setEditIndex] = useState(null);
   const [editValue, setEditValue] = useState("");
+  // Edition  pour Avocats (nom/prénom selon la langue)
+  const [editAvocat, setEditAvocat] = useState({ nom: "", prenom: "" });
   const [error, setError] = useState("");
 
   // États spécifiques pour les tribunaux
@@ -65,18 +78,51 @@ export default function ConfigModal({ onClose }) {
   });
   const [typeTribunaux, setTypeTribunaux] = useState([]);
   const [tribunalIdManuallyEdited, setTribunalIdManuallyEdited] = useState(false);
+  //avocats
+  const [showAvocatForm, setShowAvocatForm] = useState(false);
+  const [avocatForm, setAvocatForm] = useState({
+  idavocat: '',
+  nomavocat_fr: '',
+  nomavocat_ar: '',
+  prenom_fr: '',
+  prenom_ar: '',
+  telephone: '',
+  email: '',
+  adresse_fr: '',
+  adresse_ar: '',
+  ville_fr: '',
+  ville_ar: '',
+  barreau: '',
+  specialisation: ''
+});
 
+// ar/fr: champs avec fallback
   const getLocalizedValue = (obj, baseField) => {
     if (!obj) return "";
-    const isArabic = (i18n.language || "").startsWith("ar");
-    const preferred = obj[`${baseField}_${isArabic ? "ar" : "fr"}`];
-    if (preferred !== undefined && preferred !== null && String(preferred).trim() !== "") {
-      return preferred;
+    const isArabicLang = (i18n.language || "").startsWith("ar");
+    if (isArabicLang) {
+      const ar = obj[`${baseField}_ar`];
+      if (ar !== undefined && ar !== null && String(ar).trim() !== "") return ar;
+      const fr = obj[`${baseField}_fr`];
+      if (fr !== undefined && fr !== null && String(fr).trim() !== "") return fr;
+      return obj[baseField] || "";
     }
-    // Fallback chain: base field, fr, ar
-    return (
-      obj[baseField] ?? obj[`${baseField}_fr`] ?? obj[`${baseField}_ar`] ?? ""
-    );
+    const fr = obj[`${baseField}_fr`];
+    if (fr !== undefined && fr !== null && String(fr).trim() !== "") return fr;
+    const ar = obj[`${baseField}_ar`];
+    if (ar !== undefined && ar !== null && String(ar).trim() !== "") return ar;
+    return obj[baseField] || "";
+  };
+
+  // Libellé affiché pour les avocats selon la langue (ar/fr)
+  const getAvocatLabel = (avocat) => {
+    if (!avocat) return "";
+    if (isArabic) {
+      const ar = `${avocat.prenom_ar || ''} ${avocat.nomavocat_ar || ''}`.trim();
+      if (ar) return ar;
+    }
+    const fr = `${avocat.prenom_fr || ''} ${avocat.nomavocat_fr || ''}`.trim();
+    return fr;
   };
 
   useEffect(() => {
@@ -105,6 +151,20 @@ export default function ConfigModal({ onClose }) {
       fetchTypeTribunaux();
     }
   }, [selectedTable]);
+
+  // autoriser l'ouverture sur une table
+  useEffect(() => {
+    if (!initialTableKey) return;
+    const tbl = TABLES.find((t) => t.key === initialTableKey);
+    if (tbl) setSelectedTable(tbl);
+  }, [initialTableKey]);
+
+  //  ouvre directement le form d'avocats
+  useEffect(() => {
+    if (selectedTable.key === "avocats" && openAvocatForm) {
+      setShowAvocatForm(true);
+    }
+  }, [selectedTable, openAvocatForm]);
 
   // 3 lettres de ville pour id tribunal
   const normalizeCityCode = (value) => {
@@ -143,18 +203,18 @@ export default function ConfigModal({ onClose }) {
 
     if (!newValue.trim()) return;
 
-    // Vérification d'existence pour les statuts d'affaire
-    if (selectedTable.key === "statutaffaires") {
-      const exists = items.some(
-        (item) =>
-          item.libellestatutaffaire.trim().toLowerCase() ===
-          newValue.trim().toLowerCase(),
-      );
-      if (exists) {
-        setError(t("Ce statut existe déjà !"));
-        return;
-      }
-    }
+    // // Vérification d'existence pour les statuts d'affaire (désactivé)
+    // if (selectedTable.key === "statutaffaires") {
+    //   const exists = items.some(
+    //     (item) =>
+    //       item.libellestatutaffaire.trim().toLowerCase() ===
+    //       newValue.trim().toLowerCase(),
+    //   );
+    //   if (exists) {
+    //     setError(t("Ce statut existe déjà !"));
+    //     return;
+    //   }
+    // }
 
     // Vérification d'existence pour les types d'intervention
     if (selectedTable.key === "typeinterventions") {
@@ -172,7 +232,7 @@ export default function ConfigModal({ onClose }) {
     try {
       let dataToSend = { [selectedTable.field]: newValue };
 
-      if (selectedTable.key && ["fonctionclients","typeaffaires","typeclients","statutaffaires","etapejudiciaires","tribunals","typetribunals","typeinterventions"].includes(selectedTable.key)) {
+      if (selectedTable.key && ["fonctionclients","typeaffaires","typeclients","statutaffaires","etapejudiciaires","tribunals","typetribunals","typeinterventions","typesocietes"].includes(selectedTable.key)) {
         dataToSend[`${selectedTable.field}_fr`] = newValue;
         dataToSend[`${selectedTable.field}_ar`] = newValue;
       }
@@ -204,6 +264,14 @@ export default function ConfigModal({ onClose }) {
           description: "",
         };
       }
+      if (selectedTable.key === "avocats") {
+        setShowAvocatForm(true);
+        return;
+      }
+
+
+
+
 
       console.log("Données envoyées:", dataToSend);
       await api.post(`${selectedTable.key}/`, dataToSend);
@@ -220,6 +288,7 @@ export default function ConfigModal({ onClose }) {
             : err.message),
       );
     }
+
   };
 
   const handleEdit = async (item, index) => {
@@ -235,8 +304,8 @@ export default function ConfigModal({ onClose }) {
         itemId = item.idtypeaffaire;
       } else if (selectedTable.key === "typeclients") {
         itemId = item.idtypeclient;
-      } else if (selectedTable.key === "statutaffaires") {
-        itemId = item.idstatutaffaire;
+      // } else if (selectedTable.key === "statutaffaires") {
+      //   itemId = item.idstatutaffaire;
       } else if (selectedTable.key === "tribunals") {
         itemId = item.idtribunal;
       } else if (selectedTable.key === "typetribunals") {
@@ -247,23 +316,35 @@ export default function ConfigModal({ onClose }) {
         itemId = item.idtypedemande;
       } else if (selectedTable.key === "typeinterventions") {
         itemId = item.idtypeintervention;
-      } else {
+      }
+        else if (selectedTable.key === "avocats") {
+        itemId = item.idavocat;
+        }
+        else {
         itemId = item.id || item[`id${selectedTable.key.slice(0, -1)}`];
       }
 
       console.log("ID de l'élément:", itemId);
       console.log("URL:", `${selectedTable.key}/${itemId}/`);
 
-      const payload = { [selectedTable.field]: editValue };
-      if (item.hasOwnProperty(`${selectedTable.field}_fr`)) {
-        payload[`${selectedTable.field}_fr`] = editValue;
-      }
-      if (item.hasOwnProperty(`${selectedTable.field}_ar`)) {
-        payload[`${selectedTable.field}_ar`] = editValue;
+      let payload = { [selectedTable.field]: editValue };
+      // Cas spécial pour les avocats: éditer prénom/nom selon la langue
+      if (selectedTable.key === "avocats") {
+        payload = isArabic
+          ? { prenom_ar: editAvocat.prenom, nomavocat_ar: editAvocat.nom }
+          : { prenom_fr: editAvocat.prenom, nomavocat_fr: editAvocat.nom };
+      } else {
+        if (item.hasOwnProperty(`${selectedTable.field}_fr`)) {
+          payload[`${selectedTable.field}_fr`] = editValue;
+        }
+        if (item.hasOwnProperty(`${selectedTable.field}_ar`)) {
+          payload[`${selectedTable.field}_ar`] = editValue;
+        }
       }
 
       await api.patch(`${selectedTable.key}/${itemId}/`, payload);
       setEditIndex(null);
+      setEditAvocat({ nom: "", prenom: "" });
       const res = await api.get(`${selectedTable.key}/`);
       setItems(res.data);
     } catch (err) {
@@ -288,13 +369,17 @@ export default function ConfigModal({ onClose }) {
         itemId = item.idtypeaffaire;
       } else if (selectedTable.key === "typeclients") {
         itemId = item.idtypeclient;
-      } else if (selectedTable.key === "statutaffaires") {
-        itemId = item.idstatutaffaire;
+      // } else if (selectedTable.key === "statutaffaires") {
+      //   itemId = item.idstatutaffaire;
       } else if (selectedTable.key === "tribunals") {
         itemId = item.idtribunal;
       } else if (selectedTable.key === "typetribunals") {
         itemId = item.idtypetribunal;
-      } else {
+      }
+        else if (selectedTable.key === "avocats") {
+            itemId = item.idavocat;
+       }
+        else {
         itemId = item.id || item[`id${selectedTable.key.slice(0, -1)}`];
       }
 
@@ -393,18 +478,128 @@ export default function ConfigModal({ onClose }) {
     setError("");
   };
 
-  // Filtrage des doublons pour les statuts d'affaire
+  // // Filtrage des doublons pour les statuts d'affaire (désactivé)
   let itemsToDisplay = items;
-  if (selectedTable.key === "statutaffaires") {
-    itemsToDisplay = items.filter(
-      (s, idx, arr) =>
-        arr.findIndex(
-          (x) =>
-            (x.libellestatutaffaire || "").trim().toLowerCase() ===
-            (s.libellestatutaffaire || "").trim().toLowerCase(),
-        ) === idx,
+  // if (selectedTable.key === "statutaffaires") {
+  //   itemsToDisplay = items.filter(
+  //     (s, idx, arr) =>
+  //       arr.findIndex(
+  //         (x) =>
+  //           (x.libellestatutaffaire || "").trim().toLowerCase() ===
+  //           (s.libellestatutaffaire || "").trim().toLowerCase(),
+  //       ) === idx,
+  //   );
+  // }
+
+
+
+
+  // sauvegarder un avocat
+const handleSaveAvocat = async () => {
+  try {
+    // Validation des champs obligatoires et UX messages détaillés
+    const errors = [];
+    if (!avocatForm.nomavocat_fr) {
+      errors.push(t("Le nom (français) est obligatoire"));
+    }
+    if (!avocatForm.nomavocat_ar) {
+      errors.push(t("Le nom (arabe) est obligatoire"));
+    }
+    if (!avocatForm.prenom_ar) {
+      errors.push(t("Le prénom (arabe) est obligatoire"));
+    }
+
+    // Validation email simple
+    if (avocatForm.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(avocatForm.email)) {
+      errors.push(t("Email invalide (ex: nom@domaine.com)"));
+    }
+
+   // Validation téléphone (Maroc) : accepte +2126..., 06..., 07...,
+const phoneDigits = (avocatForm.telephone || '').replace(/\D/g, '');
+if (avocatForm.telephone && !(/^(?:\+212|0)[5-7]\d{8}$/.test(phoneDigits))) {
+  errors.push(t("Téléphone invalide (format marocain)"));
+}
+
+    if (errors.length) {
+      setError(errors.join(' • '));
+      return;
+    }
+
+    // Préparer les données avec les noms de champs attendus par l'API
+    const dataToSend = {
+      nomavocat_fr: avocatForm.nomavocat_fr || '',
+      prenom_fr: avocatForm.prenom_fr || '',
+      nomavocat_ar: avocatForm.nomavocat_ar || '',
+      prenom_ar: avocatForm.prenom_ar || '',
+      telephone: avocatForm.telephone || '',
+      email: avocatForm.email || '',
+      adresse_fr: avocatForm.adresse_fr || '',
+      adresse_ar: avocatForm.adresse_ar || '',
+      ville_fr: avocatForm.ville_fr || '',
+      ville_ar: avocatForm.ville_ar || '',
+      barreau: avocatForm.barreau || '',
+      specialisation: avocatForm.specialisation || ''
+    };
+
+    // Envoyer les données à l'API
+    let response;
+    if (avocatForm.idavocat) {
+      // Mise à jour
+      response = await api.put(`avocats/${avocatForm.idavocat}/`, dataToSend);
+    } else {
+      // Création
+      response = await api.post('avocats/', dataToSend);
+    }
+
+    // Rafraîchir la liste
+    const updatedList = await api.get('avocats/');
+    setItems(updatedList.data);
+
+    // Fermer le formulaire et réinitialiser
+    setShowAvocatForm(false);
+    setAvocatForm({
+      idavocat: '',
+      nomavocat_fr: '',
+      nomavocat_ar: '',
+      prenom_fr: '',
+      prenom_ar: '',
+      telephone: '',
+      email: '',
+      adresse_fr: '',
+      adresse_ar: '',
+      ville_fr: '',
+      ville_ar: '',
+      barreau: '',
+      specialisation: ''
+    });
+    setError("");
+  } catch (error) {
+    console.error("Erreur lors de l'enregistrement de l'avocat:", error);
+    setError(
+      t("Erreur lors de l'enregistrement: ") +
+        (error.response?.data ? JSON.stringify(error.response.data) : error.message)
     );
   }
+};
+//   annuler l'édition d'un avocat
+const handleAvocatCancel = () => {
+  setShowAvocatForm(false);
+  setAvocatForm({
+    nomavocat_fr: '',
+    nomavocat_ar: '',
+    prenom_fr: '',
+    prenom_ar: '',
+    telephone: '',
+    email: '',
+    adresse_fr: '',
+    adresse_ar: '',
+    ville_fr: '',
+    ville_ar: '',
+    barreau: '',
+    specialisation: ''
+  });
+  setError("");
+};
 
   return (
     <div
@@ -517,7 +712,9 @@ export default function ConfigModal({ onClose }) {
                   }}
                 >
                   <tr>
-                    <th style={{ textAlign: "left", padding: 8 }}>{t("Libellé")}</th>
+                    <th style={{ textAlign: "left", padding: 8 }}>
+                      {selectedTable.key === "avocats" ? t("Nom complet") : t("Libellé")}
+                    </th>
                     <th style={{ textAlign: isArabic ? "center" : "left", padding: 8 }}>{t("Actions")}</th>
                   </tr>
                 </thead>
@@ -526,25 +723,46 @@ export default function ConfigModal({ onClose }) {
                     <tr key={idx}>
                       <td style={{ padding: 8 }}>
                         {editIndex === idx ? (
-                          <input
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            style={{
-                              width: "100%",
-                              padding: "6px 8px",
-                              fontSize: 14,
-                              borderRadius: 4,
-                              border: "1px solid #e0e0e0",
-                              outline: "none",
-                            }}
-                            onKeyPress={(e) => {
-                              if (e.key === "Enter") {
-                                handleEdit(item, idx);
-                              }
-                            }}
-                          />
+                          selectedTable.key === "avocats" ? (
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                              <input
+                                value={editAvocat.prenom}
+                                onChange={(e) => setEditAvocat({ ...editAvocat, prenom: e.target.value })}
+                                placeholder={t(isArabic ? "Prénom (arabe)" : "Prénom (français)")}
+                                dir={isArabic ? "rtl" : "ltr"}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: 14, borderRadius: 4, border: "1px solid #e0e0e0" }}
+                                onKeyPress={(e) => { if (e.key === "Enter") { handleEdit(item, idx); } }}
+                              />
+                              <input
+                                value={editAvocat.nom}
+                                onChange={(e) => setEditAvocat({ ...editAvocat, nom: e.target.value })}
+                                placeholder={t(isArabic ? "Nom (arabe)" : "Nom (français)")}
+                                dir={isArabic ? "rtl" : "ltr"}
+                                style={{ width: "100%", padding: "6px 8px", fontSize: 14, borderRadius: 4, border: "1px solid #e0e0e0" }}
+                                onKeyPress={(e) => { if (e.key === "Enter") { handleEdit(item, idx); } }}
+                              />
+                            </div>
+                          ) : (
+                            <input
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              style={{
+                                width: "100%",
+                                padding: "6px 8px",
+                                fontSize: 14,
+                                borderRadius: 4,
+                                border: "1px solid #e0e0e0",
+                                outline: "none",
+                              }}
+                              onKeyPress={(e) => {
+                                if (e.key === "Enter") {
+                                  handleEdit(item, idx);
+                                }
+                              }}
+                            />
+                          )
                         ) : (
-                          getLocalizedValue(item, selectedTable.field)
+                          selectedTable.key === "avocats" ? getAvocatLabel(item) : getLocalizedValue(item, selectedTable.field)
                         )}
                       </td>
                       <td style={{ padding: 8, textAlign: isArabic ? "center" : "left" }}>
@@ -582,7 +800,14 @@ export default function ConfigModal({ onClose }) {
                             <button
                               onClick={() => {
                                 setEditIndex(idx);
-                                setEditValue(getLocalizedValue(item, selectedTable.field));
+                                if (selectedTable.key === "avocats") {
+                                  setEditAvocat({
+                                    prenom: isArabic ? (item.prenom_ar || "") : (item.prenom_fr || ""),
+                                    nom: isArabic ? (item.nomavocat_ar || "") : (item.nomavocat_fr || ""),
+                                  });
+                                } else {
+                                  setEditValue(getLocalizedValue(item, selectedTable.field));
+                                }
                               }}
                               style={{
                                 marginRight: 8,
@@ -894,8 +1119,8 @@ export default function ConfigModal({ onClose }) {
               </div>
             )}
 
-            {/* Zone d'ajout normale pour les autres tables */}
-            {selectedTable.key !== "tribunals" && (
+            {/* Zone d'ajout normale pour les autres tables sauf tribunaux et avocats */}
+            {selectedTable.key !== "tribunals" && selectedTable.key !== "avocats" && (
             <div
               style={{
                 borderTop: "2px solid #e0e0e0",
@@ -969,9 +1194,389 @@ export default function ConfigModal({ onClose }) {
                 </div>
               </div>
             )}
+
+            {/* Zone d'ajout pour les avocats  */}
+            {selectedTable.key === "avocats" && (
+              <div
+                style={{
+                  borderTop: "2px solid #e0e0e0",
+                  paddingTop: 16,
+                  background: "#fff",
+                  borderRadius: "0 0 8px 8px",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <button
+                    onClick={() => setShowAvocatForm(true)}
+                    style={{
+                      color: "#fff",
+                      background: "#43a047",
+                      border: "none",
+                      padding: "10px 16px",
+                      borderRadius: 6,
+                      cursor: "pointer",
+                      fontWeight: "bold",
+                    }}
+                  >
+                    {t("Ajouter")}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+      {/* Formulaire des avocats */}
+{showAvocatForm && (
+  <div
+    style={{
+      position: "fixed",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      background: "rgba(0,0,0,0.5)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 2000,
+    }}
+  >
+    <div
+      style={{
+        background: "#fff",
+        borderRadius: 8,
+        padding: 24,
+        width: "90%",
+        maxWidth: 800,
+        maxHeight: "90vh",
+        overflowY: "auto",
+      }}
+    >
+      <h3 style={{ marginTop: 0, color: "#1976d2", textAlign: "center" }}>
+        {avocatForm.idavocat ? t("Modifier l'avocat") : t("Ajouter un avocat")}
+      </h3>
+
+      {error && <div style={{
+        color: "#e53935",
+        marginBottom: 16,
+        padding: "8px",
+        background: "#ffebee",
+        borderRadius: "4px",
+        textAlign: "center"
+      }}>{error}</div>}
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: 16,
+        marginBottom: 16
+      }}>
+        {/* Section Informations Personnelles */}
+        <div style={{
+          gridColumn: "1 / -1",
+          padding: "12px",
+          background: "#f5f6fa",
+          borderRadius: "6px",
+          marginBottom: "8px"
+        }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#1976d2" }}>{t("Informations Personnelles")}</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Nom (français)")} *</label>
+              <input
+                value={avocatForm.nomavocat_fr || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, nomavocat_fr: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("Entrez le nom en français")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Prénom (français)")} *</label>
+              <input
+                value={avocatForm.prenom_fr || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, prenom_fr: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("Entrez le prénom en français")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Nom (arabe)*")}</label>
+              <input
+                dir="rtl"
+                value={avocatForm.nomavocat_ar || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, nomavocat_ar: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px",
+                  textAlign: "right"
+                }}
+                placeholder={t("الاسم العائلي بالعربية")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Prénom (arabe)*")}</label>
+              <input
+                dir="rtl"
+                value={avocatForm.prenom_ar || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, prenom_ar: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px",
+                  textAlign: "right"
+                }}
+                placeholder={t("الاسم الشخصي بالعربية")}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section Coordonnées */}
+        <div style={{
+          gridColumn: "1 / -1",
+          padding: "12px",
+          background: "#f5f6fa",
+          borderRadius: "6px",
+          marginBottom: "8px"
+        }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#1976d2" }}>{t("Coordonnées")}</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Téléphone")} *</label>
+              <input
+                type="tel"
+                value={avocatForm.telephone || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, telephone: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder="+212 600 000000"
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Email")}</label>
+              <input
+                type="email"
+                value={avocatForm.email || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, email: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder="exemple@domaine.com"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section Adresse */}
+        <div style={{
+          gridColumn: "1 / -1",
+          padding: "12px",
+          background: "#f5f6fa",
+          borderRadius: "6px",
+          marginBottom: "8px"
+        }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#1976d2" }}>{t("Adresse")}</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Adresse (français)")}</label>
+              <input
+                value={avocatForm.adresse_fr || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, adresse_fr: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("N° Rue, Quartier")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Adresse (arabe)")}</label>
+              <input
+                dir="rtl"
+                value={avocatForm.adresse_ar || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, adresse_ar: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px",
+                  textAlign: "right"
+                }}
+                placeholder={t("الشارع، الحي")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Ville (français)")}</label>
+              <input
+                value={avocatForm.ville_fr || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, ville_fr: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("Nom de la ville")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Ville (arabe)")}</label>
+              <input
+                dir="rtl"
+                value={avocatForm.ville_ar || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, ville_ar: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px",
+                  textAlign: "right"
+                }}
+                placeholder={t("اسم المدينة")}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Section Informations Professionnelles */}
+        <div style={{
+          gridColumn: "1 / -1",
+          padding: "12px",
+          background: "#f5f6fa",
+          borderRadius: "6px"
+        }}>
+          <h4 style={{ margin: "0 0 12px 0", color: "#1976d2" }}>{t("Informations Professionnelles")}</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Barreau d'affiliation")}</label>
+              <input
+                value={avocatForm.barreau || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, barreau: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("Ex: Barreau de Casablanca")}
+              />
+            </div>
+            <div>
+              <label style={{ display: "block", marginBottom: 4, fontWeight: 500 }}>{t("Spécialisation")}</label>
+              <input
+                value={avocatForm.specialisation || ''}
+                onChange={(e) => setAvocatForm({...avocatForm, specialisation: e.target.value})}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #ddd",
+                  borderRadius: 4,
+                  fontSize: "14px"
+                }}
+                placeholder={t("Ex: Droit des affaires, Droit pénal, etc.")}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: 12,
+        marginTop: 24,
+        paddingTop: 16,
+        borderTop: "1px solid #eee"
+      }}>
+        <button
+          onClick={() => {
+            setShowAvocatForm(false);
+            setAvocatForm({
+              idavocat: '',
+              nomavocat_fr: '',
+              nomavocat_ar: '',
+              prenom_fr: '',
+              prenom_ar: '',
+              telephone: '',
+              email: '',
+              adresse_fr: '',
+              adresse_ar: '',
+              ville_fr: '',
+              ville_ar: '',
+              barreau: '',
+              specialisation: ''
+            });
+            setError("");
+          }}
+          style={{
+            padding: "8px 20px",
+            border: "1px solid #ccc",
+            background: "#fff",
+            borderRadius: 4,
+            cursor: "pointer",
+            fontWeight: 500,
+            transition: "all 0.2s"
+          }}
+          onMouseOver={(e) => e.target.style.background = "#f5f5f5"}
+          onMouseOut={(e) => e.target.style.background = "#fff"}
+        >
+          {t("Annuler")}
+        </button>
+        <button
+          onClick={handleSaveAvocat}
+          style={{
+            padding: "8px 20px",
+            background: "#1976d2",
+            color: "#fff",
+            border: "none",
+            borderRadius: 4,
+            cursor: "pointer",
+            fontWeight: 500,
+            transition: "all 0.2s"
+          }}
+          onMouseOver={(e) => e.target.style.background = "#1565c0"}
+          onMouseOut={(e) => e.target.style.background = "#1976d2"}
+        >
+          {t("Enregistrer")}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 }

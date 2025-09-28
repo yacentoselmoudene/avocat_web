@@ -300,14 +300,42 @@ class ClientViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 client = self.get_object()
-                Affairejudiciaire.objects.filter(idclient=client).delete()
+                
+                # Récupérer toutes les affaires du client
+                affaires = Affairejudiciaire.objects.filter(idclient=client)
+                
+                # Supprimer toutes les relations des affaires dans l'ordre correct
+                for affaire in affaires:
+                    # Supprimer les relations qui référencent l'affaire
+                    from .models import (
+                        Affairetribunal, Audience, Etapejudiciaire, StatutAffaire,
+                        AffaireOpposantAvocat, AffaireJuge, Fichier, Notification
+                    )
+                    
+                    # Supprimer les relations dans l'ordre inverse des dépendances
+                    Notification.objects.filter(affaire=affaire).delete()
+                    Fichier.objects.filter(affaire=affaire).delete()
+                    AffaireJuge.objects.filter(affaire=affaire).delete()
+                    AffaireOpposantAvocat.objects.filter(affaire=affaire).delete()
+                    StatutAffaire.objects.filter(idaffaire=affaire).delete()
+                    Etapejudiciaire.objects.filter(idaffaire=affaire).delete()
+                    Audience.objects.filter(idaffaire=affaire).delete()
+                    Affairetribunal.objects.filter(idaffaire=affaire).delete()
+                
+                # Maintenant supprimer les affaires
+                affaires.delete()
+                
+                # Supprimer les autres relations du client
                 Contrat.objects.filter(idclient=client).delete()
                 Facture.objects.filter(idclient=client).delete()
 
+                # Supprimer l'utilisateur associé
                 if client.user:
                     client.user.delete()
                 
+                # Enfin supprimer le client
                 client.delete()
+                
                 return Response({'message': 'Client supprimé avec succès'}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({
@@ -616,26 +644,16 @@ class AffairejudiciaireViewSet(viewsets.ModelViewSet):
                         opposant.save()
                     
                     #  l'enregistrement dans AffaireOpposantAvocat
-                    #  avocat temporaire
+                    #  utiliser un avocat existant si disponible, sinon ne rien créer
                     avocat_default = Avocat.objects.first()
-                    
-                    if not avocat_default:
-                        #  un avocat temporaire avec un ID par défaut
-                        avocat_default, created = Avocat.objects.get_or_create(
-                            idavocat='TEMP001',
-                            defaults={
-                                'nomavocat': 'Avocat temporaire',
-                                'specialisation': 'À définir'
-                            }
+                    if avocat_default:
+                        AffaireOpposantAvocat.objects.create(
+                            affaire=affaire,
+                            opposant=opposant,
+                            avocat=avocat_default,
+                            role_avocat='À définir',
+                            actif=True
                         )
-                    
-                    relation = AffaireOpposantAvocat.objects.create(
-                        affaire=affaire,
-                        opposant=opposant,
-                        avocat=avocat_default,
-                        role_avocat='À définir',
-                        actif=True
-                    )
                     
                     affaire.idopposant = opposant
                     affaire.save()
@@ -732,6 +750,13 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 
+# ref
+class CheckClientReferenceView(APIView):
+    def get(self, request, reference):
+        print(f"Checking reference: {reference}")  # Debug log
+        exists = Client.objects.filter(reference_client=reference).exists()
+        print(f"Reference exists: {exists}")  # Debug log
+        return Response({'exists': exists})
 
 # ViewSet pour créer des clients et utilisateurs en une seule opération
 
@@ -739,71 +764,117 @@ class CreateClientView(APIView):
     def post(self, request):
         try:
             with transaction.atomic():
+                # Validate email format
+                email = request.data.get('email')
+                if email and '@' not in email:
+                    return Response({
+                        'error': 'Format email invalide'
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Create Django user
+                username = request.data.get('username')
+                password = request.data.get('password')
                 user = User.objects.create_user(
-                    username=request.data['username'],
-                    password=request.data['password']
+                    username=username,
+                    password=password,
+                    email=email or None
                 )
+
+                # Handle type_client
                 idtypeclient = request.data['idtypeclient']
                 if isinstance(idtypeclient, dict) and 'idtypeclient' in idtypeclient:
                     idtypeclient = idtypeclient['idtypeclient']
                 elif not isinstance(idtypeclient, (int, str)):
-                    raise ValueError(f"idtypeclient doit être un nombre, reçu: {type(idtypeclient)}")
+                    idtypeclient = None
+
+                # Helper function to get first non-empty value
                 def get_first(data, key):
-                    v = data.getlist(key)
-                    return v[0] if v else ''
+                    if isinstance(data.get(key), list):
+                        return next((x for x in data[key] if x), None)
+                    return data.get(key)
+
+                # Create client
                 client = Client.objects.create(
+                    user=user,
                     nomclient_fr=get_first(request.data, 'nomclient_fr'),
                     nomclient_ar=get_first(request.data, 'nomclient_ar'),
                     prenomclient_fr=get_first(request.data, 'prenomclient_fr'),
                     prenomclient_ar=get_first(request.data, 'prenomclient_ar'),
-                    email=get_first(request.data, 'email'),
+                    adresse1=get_first(request.data, 'adresse1'),
+                    adresse2=get_first(request.data, 'adresse2'),
                     numtel1=get_first(request.data, 'numtel1'),
                     numtel2=get_first(request.data, 'numtel2'),
-                    adresse1_fr=get_first(request.data, 'adresse1_fr'),
-                    adresse1_ar=get_first(request.data, 'adresse1_ar'),
-                    adresse2_fr=get_first(request.data, 'adresse2_fr'),
-                    adresse2_ar=get_first(request.data, 'adresse2_ar'),
-                    idtypeclient_id=idtypeclient,
-                    user=user,
+                    email=email,
+                    reference_client=request.data.get('reference_client'),
+                    raison_sociale_fr=get_first(request.data, 'raison_sociale_fr'),
+                    raison_sociale_ar=get_first(request.data, 'raison_sociale_ar'),
+                    idtypeclient_id=idtypeclient
                 )
+
+                # Handle type société if provided
+                try:
+                    if request.data.get('is_societe'):
+                        type_societe_id = request.data.get('idtypesociete')
+                        if type_societe_id:
+                            client.idtypesociete_id = type_societe_id
+                            client.save()
+                except Exception:
+                    pass
+
+                # Handle contract file for société
                 contrat = None
                 if request.data.get('is_societe') and request.FILES.get('fichier'):
-                    fichier = request.FILES.get('fichier')
                     contrat = Contrat.objects.create(
                         idclient=client,
-                        fichier=fichier
+                        fichier=request.FILES['fichier'],
+                        nom_fichier=request.FILES['fichier'].name
                     )
+
+                # Get type client info
                 type_client = client.idtypeclient
+
                 return Response({
-                    'success': True,
                     'message': 'Client créé avec succès',
                     'client': {
                         'idclient': client.idclient,
                         'nomclient_fr': client.nomclient_fr,
                         'nomclient_ar': client.nomclient_ar,
-                        'nomclient': client.nomclient,  # Pour compatibilité
                         'prenomclient_fr': client.prenomclient_fr,
                         'prenomclient_ar': client.prenomclient_ar,
-                        'adresse1_fr': client.adresse1_fr,
-                        'adresse1_ar': client.adresse1_ar,
-                        'adresse1': client.adresse1,  # Pour compatibilité
-                        'adresse2_fr': client.adresse2_fr,
-                        'adresse2_ar': client.adresse2_ar,
-                        'adresse2': client.adresse2,  # Pour compatibilité
-                        'type_client': type_client.libelletypeclient_fr or type_client.libelletypeclient_ar or '',
-                        'user_id': user.id
-                    },
-                    'contrat': contrat.idcontrat if contrat else None
+                        'adresse1': client.adresse1,
+                        'adresse2': client.adresse2,
+                        'numtel1': client.numtel1,
+                        'numtel2': client.numtel2,
+                        'email': client.email,
+                        'reference_client': client.reference_client,
+                        'raison_sociale_fr': client.raison_sociale_fr,
+                        'raison_sociale_ar': client.raison_sociale_ar,
+                        'type_client': {
+                            'idtypeclient': type_client.idtypeclient if type_client else None,
+                            'libelletypeclient_fr': type_client.libelletypeclient_fr if type_client else None,
+                            'libelletypeclient_ar': type_client.libelletypeclient_ar if type_client else None
+                        } if type_client else None,
+                        'contrat': {
+                            'idcontrat': contrat.idcontrat,
+                            'fichier': contrat.fichier.url if contrat.fichier else None,
+                            'nom_fichier': contrat.nom_fichier
+                        } if contrat else None
+                    }
                 }, status=status.HTTP_201_CREATED)
-        except User.DoesNotExist:
-            return Response({
-                'error': 'Erreur lors de la création de l\'utilisateur'
-            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # except User.DoesNotExist:
+        #     return Response({
+        #         'error': 'Erreur lors de la création de l\'utilisateur'
+        #     }, status=status.HTTP_400_BAD_REQUEST)
+        #
+        # except Exception as e:
+        #     return Response({
+        #         'error': f'Erreur lors de la création du client: {str(e)}'
+        #     }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({
-                'error': f'Erreur lors de la création du client: {str(e)}'
+                'message': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
-
 
 
 
@@ -918,6 +989,10 @@ class AudienceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(idaffaire__idclient=user.client.idclient)
 
         return queryset
+
+
+# ViewSet  des types de société
+
 
     @action(detail=False, methods=['get'])
     def types_disponibles(self, request):
@@ -1036,6 +1111,7 @@ class AudienceViewSet(viewsets.ModelViewSet):
 class AvocatViewSet(viewsets.ModelViewSet):
     queryset = Avocat.objects.all()
     serializer_class = AvocatSerializer
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 
 
 
@@ -1330,7 +1406,10 @@ class AffaireOpposantAvocatViewSet(viewsets.ModelViewSet):
     queryset = AffaireOpposantAvocat.objects.all()
     serializer_class = AffaireOpposantAvocatSerializer
 
-
+class TypeSocieteViewSet(viewsets.ModelViewSet):
+    queryset = TypeSociete.objects.all()
+    serializer_class = TypeSocieteSerializer
+    http_method_names = ['get', 'post', 'put', 'patch', 'delete']
 # Vues d'API pour des fonctionnalités métier spécifiques
 
 # vue de  suggestion et filtrage selon le code
@@ -3505,6 +3584,11 @@ def get_tous_fichiers(request):
         return Response(serializer.data)
     except Exception as e:
         return Response({'error': f'Erreur: {str(e)}'}, status=500)
+# refrence
+@api_view(['GET'])
+def check_reference(request, reference):
+    exists = Client.objects.filter(reference_client=reference).exists()
+    return Response({'exists': exists})
 
 @api_view(['GET'])
 def get_tous_documents(request):

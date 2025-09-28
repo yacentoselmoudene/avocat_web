@@ -1,6 +1,6 @@
 // frontend/src/api/axios.js
 import axios from "axios";
-import i18n from "../i18n"; // wherever you init i18n
+import i18n from "../i18n";
 
 const ensureSlash = (s) => (s.endsWith("/") ? s : s + "/");
 export const API_BASE   = ensureSlash(import.meta.env.VITE_API_URL || "/api");
@@ -36,7 +36,7 @@ function onRefreshed(newAccess) {
 export function logoutClientSide() {
   localStorage.removeItem("access");
   localStorage.removeItem("refresh");
-  window.location.href = "https://lmohami.ma/";
+  window.location.href = "https://lmohami.ma";
 }
 
 export async function logoutServerSide() {

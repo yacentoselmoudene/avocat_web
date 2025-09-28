@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { fetchTousDocuments } from "../api/documents";
+import Select from "react-select";
 
 export default function Documents() {
   const { t } = useTranslation();
@@ -111,17 +112,23 @@ export default function Documents() {
             <label htmlFor="docType" style={{ fontWeight: 600 }}>
               {t("Type de document")}:
             </label>
-            <select
-              id="docType"
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-            >
-              {allTypes.map((tp) => (
-                <option key={tp} value={tp}>
-                  {tp === "ALL" ? t("Tous") : t(tp)}
-                </option>
-              ))}
-            </select>
+            <div style={{ minWidth: 220 }}>
+              <Select
+                inputId="docType"
+                value={allTypes.map(tp => ({ value: tp, label: tp === "ALL" ? t("Tous") : t(tp) })).find(o => o.value === filterType) || null}
+                onChange={(opt) => setFilterType(opt?.value || "ALL")}
+                options={allTypes.map(tp => ({ value: tp, label: tp === "ALL" ? t("Tous") : t(tp) }))}
+                isSearchable={true}
+                isClearable={true}
+                menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+                styles={{
+                  control: (p,s) => ({...p, minHeight: 36, boxShadow: 'none'}),
+                  indicatorSeparator: () => ({ display: 'none' }),
+                  menuPortal: base => ({ ...base, zIndex: 9999 }),
+                  menu: base => ({ ...base, zIndex: 9999 })
+                }}
+              />
+            </div>
             <input
               type="text"
               placeholder={t("Rechercher par client...")}
