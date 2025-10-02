@@ -74,19 +74,19 @@ else:
 
 
 if DEBUG:
-    # Local/dev DB (overridable via env for Docker Compose)
+    # Simple local DB (or point to your local MySQL if you prefer)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('DB_NAME', 'cabinetavocat'),
-            'USER': os.environ.get('DB_USER', 'root'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'Bismillah@99'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '3306'),
+            'NAME': 'cabinetavocat',
+            'USER': 'root',
+            'PASSWORD': 'root',
+            'HOST': 'localhost',
+            'PORT': '3306',
             "OPTIONS": {
-                "charset": "utf8mb4",
-                "init_command": "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci', sql_mode='STRICT_TRANS_TABLES'",
-            },
+                    "charset": "utf8mb4",
+                    "init_command": "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_unicode_ci', sql_mode='STRICT_TRANS_TABLES'",
+                },
         }
     }
 else:
@@ -130,7 +130,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
+    #'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  #  du middleware de langue
     'django.middleware.common.CommonMiddleware',
@@ -235,12 +235,11 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME":  timedelta(minutes=30),  # ajuste
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),      # ajuste
+    "ACCESS_TOKEN_LIFETIME":  timedelta(minutes=160),  # ajuste
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),      # ajuste
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
-    "UPDATE_LAST_LOGIN": True,
 }
 
 #pour upload des contrats

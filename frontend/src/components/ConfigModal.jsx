@@ -334,11 +334,12 @@ export default function ConfigModal({ onClose, initialTableKey, openAvocatForm }
           ? { prenom_ar: editAvocat.prenom, nomavocat_ar: editAvocat.nom }
           : { prenom_fr: editAvocat.prenom, nomavocat_fr: editAvocat.nom };
       } else {
-        if (item.hasOwnProperty(`${selectedTable.field}_fr`)) {
-          payload[`${selectedTable.field}_fr`] = editValue;
-        }
-        if (item.hasOwnProperty(`${selectedTable.field}_ar`)) {
+        if (isArabic && item.hasOwnProperty(`${selectedTable.field}_ar`)) {
           payload[`${selectedTable.field}_ar`] = editValue;
+        } else if (!isArabic && item.hasOwnProperty(`${selectedTable.field}_fr`)) {
+          payload[`${selectedTable.field}_fr`] = editValue;
+        } else {
+           payload[selectedTable.field] = editValue;
         }
       }
 

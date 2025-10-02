@@ -3469,7 +3469,7 @@ def supprimer_etape(request, affaire_id, etape_id):
 def get_huissiers_disponibles(request):
     """Récupérer la liste des huissiers pour l'autocomplétion"""
     try:
-        huissiers = Huissier.objects.all().values('idhuissier', 'nomhuissier', 'adressehuissier', 'telephonehuissier')
+        huissiers = Huissier.objects.all().values('idhuissier', 'telephonehuissier')
         return Response(huissiers, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

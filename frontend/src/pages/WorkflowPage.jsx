@@ -6044,7 +6044,7 @@ const NotificationParamsSection = ({
         fontWeight: "bold",
       }}
     >
-      {t("Paramètres de notification officielle")}
+      ("Paramètres de notification officielle")
     </h6>
 
     <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
@@ -6056,7 +6056,7 @@ const NotificationParamsSection = ({
           onChange={(val) => setSelectedHuissier(val || null)}
           options={[{ value: "", label: "Sélectionner un huissier" },
             ...huissiers.map((h) => ({ value: h.idhuissier, label: `${h.nomhuissier} - ${h.telephonehuissier}` }))]}
-          placeholder={t("Sélectionner un huissier")}
+          placeholder={"Sélectionner un huissier"}
         />
       </div>
 

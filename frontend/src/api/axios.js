@@ -100,7 +100,7 @@ api.interceptors.response.use(
             config.__isRetryRequest = true;
 
             try {
-                // IMPORTANT: utiliser l'instance `api` et chemin relatif
+                // IMPORTANT: utiliser l'instance api et chemin relatif
                 const {data} = await api.post("token/refresh/", {refresh});
                 const newAcc = data?.access;
                 if (!newAcc) throw new Error("No access in refresh response");
@@ -124,4 +124,4 @@ api.interceptors.response.use(
     }
 );
 
-export default api;
+export default api;
